@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
+import { Package, PlusSquare, QrCode, FileSpreadsheet } from 'lucide-react'
 
 interface SidebarProps {
   isMobileOpen?: boolean
@@ -70,7 +71,9 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   className={`sidebar-link ${isActive('/') ? 'active' : ''}`}
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
-                  <span className="sidebar-icon">📦</span> 
+                  <span className="sidebar-icon">
+                    <Package size={30} />
+                  </span> 
                   <span className="sidebar-text">Inventory</span>
                 </Link>
               </li>
@@ -80,7 +83,9 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   className={`sidebar-link ${isActive('/add') ? 'active' : ''}`}
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
-                  <span className="sidebar-icon">➕</span> 
+                  <span className="sidebar-icon">
+                    <PlusSquare size={30} />
+                  </span> 
                   <span className="sidebar-text">Add New</span>
                 </Link>
               </li>
@@ -90,7 +95,9 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   className={`sidebar-link ${isActive('/scan') ? 'active' : ''}`}
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
-                  <span className="sidebar-icon">📷</span> 
+                  <span className="sidebar-icon">
+                    <QrCode size={30} />
+                  </span> 
                   <span className="sidebar-text">Scan</span>
                 </Link>
               </li>
@@ -100,7 +107,9 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   className={`sidebar-link ${isActive('/import-export') ? 'active' : ''}`}
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
-                  <span className="sidebar-icon">📊</span> 
+                  <span className="sidebar-icon">
+                    <FileSpreadsheet size={30} />
+                  </span> 
                   <span className="sidebar-text">Import/Export</span>
                 </Link>
               </li>

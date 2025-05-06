@@ -16,24 +16,20 @@ const ImportExportPage = () => {
   }
   
   return (
-    <div>
+    <div className="import-export-page">
       <h1>Import/Export</h1>
-      <p>Import items from CSV files or export your inventory in various formats.</p>
+      <p>Export your inventory in various formats or import items from CSV files.</p>
       
-      <div className="grid grid-responsive" style={{ 
-        '--grid-spacing': '2rem',
-        '--grid-template-columns': '1fr 1fr',
-        '--grid-template-columns-md': '1fr'
-       } as React.CSSProperties}>
-        <div className="card">
-          <h2>Export Data</h2>
-          <ExportOptions />
-        </div>
-        
-        <div className="card">
-          <h2>Import Data</h2>
-          <ImportForm onImportComplete={handleImportComplete} />
-        </div>
+      {/* Export Data Section - Now on top */}
+      <div className="card mb-2">
+        <h2>Export Data</h2>
+        <ExportOptions />
+      </div>
+      
+      {/* Import Data Section - Now below Export */}
+      <div className="card">
+        <h2>Import Data</h2>
+        <ImportForm onImportComplete={handleImportComplete} />
       </div>
     </div>
   )

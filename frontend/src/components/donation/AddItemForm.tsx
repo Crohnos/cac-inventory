@@ -159,132 +159,142 @@ const AddItemForm = ({ initialCategoryId, onSuccess }: AddItemFormProps) => {
   
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid">
-        <div className="form-group">
-          <label htmlFor="categoryId">
-            Category *
-            <select
-              id="categoryId"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-            >
-              <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="donation-form-container">
+        {/* Left column - Primary information */}
+        <div className="donation-form-section">
+          <h3 className="section-title">Primary Information</h3>
+          
+          <div className="form-group">
+            <label htmlFor="categoryId">
+              Category *
+              <select
+                id="categoryId"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="sizeId">
+              Size
+              <select
+                id="sizeId"
+                value={sizeId}
+                onChange={(e) => setSizeId(e.target.value)}
+                disabled={!categoryId || isLoadingSizes || categorySizes.length === 0}
+              >
+                <option value="">None</option>
+                {categorySizes.map(size => (
+                  <option key={size.id} value={size.id}>
+                    {size.name}
+                  </option>
+                ))}
+              </select>
+              {categoryId && categorySizes.length === 0 && !isLoadingSizes && (
+                <small>No sizes available for this category.</small>
+              )}
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="condition">
+              Condition *
+              <select
+                id="condition"
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as any)}
+                required
+              >
+                <option value="New">New</option>
+                <option value="Gently Used">Gently Used</option>
+                <option value="Heavily Used">Heavily Used</option>
+              </select>
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="location">
+              Location *
+              <select
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value as any)}
+                required
+              >
+                <option value="McKinney">McKinney</option>
+                <option value="Plano">Plano</option>
+              </select>
+            </label>
+          </div>
         </div>
         
-        <div className="form-group">
-          <label htmlFor="sizeId">
-            Size
-            <select
-              id="sizeId"
-              value={sizeId}
-              onChange={(e) => setSizeId(e.target.value)}
-              disabled={!categoryId || isLoadingSizes || categorySizes.length === 0}
-            >
-              <option value="">None</option>
-              {categorySizes.map(size => (
-                <option key={size.id} value={size.id}>
-                  {size.name}
-                </option>
-              ))}
-            </select>
-            {categoryId && categorySizes.length === 0 && !isLoadingSizes && (
-              <small>No sizes available for this category.</small>
-            )}
-          </label>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="condition">
-            Condition *
-            <select
-              id="condition"
-              value={condition}
-              onChange={(e) => setCondition(e.target.value as any)}
-              required
-            >
-              <option value="New">New</option>
-              <option value="Gently Used">Gently Used</option>
-              <option value="Heavily Used">Heavily Used</option>
-            </select>
-          </label>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="location">
-            Location *
-            <select
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value as any)}
-              required
-            >
-              <option value="McKinney">McKinney</option>
-              <option value="Plano">Plano</option>
-            </select>
-          </label>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="receivedDate">
-            Received Date *
-            <input
-              type="date"
-              id="receivedDate"
-              value={receivedDate}
-              onChange={(e) => setReceivedDate(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="donorInfo">
-            Donor Information
-            <input
-              type="text"
-              id="donorInfo"
-              value={donorInfo}
-              onChange={(e) => setDonorInfo(e.target.value)}
-              placeholder="Optional"
-            />
-          </label>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="approxPrice">
-            Approximate Price
-            <input
-              type="number"
-              id="approxPrice"
-              value={approxPrice}
-              onChange={(e) => setApproxPrice(e.target.value)}
-              step="0.01"
-              min="0"
-              placeholder="Optional"
-            />
-          </label>
+        {/* Right column - Additional details */}
+        <div className="donation-form-section">
+          <h3 className="section-title">Additional Details</h3>
+          
+          <div className="form-group">
+            <label htmlFor="receivedDate">
+              Received Date *
+              <input
+                type="date"
+                id="receivedDate"
+                value={receivedDate}
+                onChange={(e) => setReceivedDate(e.target.value)}
+                required
+              />
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="donorInfo">
+              Donor Information
+              <input
+                type="text"
+                id="donorInfo"
+                value={donorInfo}
+                onChange={(e) => setDonorInfo(e.target.value)}
+                placeholder="Optional"
+              />
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="approxPrice">
+              Approximate Price
+              <input
+                type="number"
+                id="approxPrice"
+                value={approxPrice}
+                onChange={(e) => setApproxPrice(e.target.value)}
+                step="0.01"
+                min="0"
+                placeholder="Optional"
+              />
+            </label>
+          </div>
         </div>
       </div>
       
-      <div className="flex justify-between items-center mt-1">
-        <label className="flex items-center gap-1">
+      <div className="form-actions mt-2">
+        <label className="add-another-checkbox">
           <input
             type="checkbox"
             checked={addAnother}
             onChange={(e) => setAddAnother(e.target.checked)}
           />
-          Add another item after this one
+          <span>Add another item after this one</span>
         </label>
         
-        <button type="submit" disabled={createDetail.isPending}>
+        <button type="submit" className="submit-button" disabled={createDetail.isPending}>
           {createDetail.isPending ? 'Adding...' : 'Add Item'}
         </button>
       </div>

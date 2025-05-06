@@ -203,54 +203,84 @@ const ItemHeader = ({ item, onRefresh }: ItemHeaderProps) => {
   
   return (
     <div className="card">
-      <div className="flex justify-between items-center">
-        <h2>Item #{item.id}</h2>
+      <div className="item-header-top">
+        <div className="item-title-section">
+          <h2>Item #{item.id}</h2>
+          <span className={`item-status-badge ${item.isActive ? 'active' : 'inactive'}`}>
+            {item.isActive ? 'Active' : 'Inactive'}
+          </span>
+        </div>
         <div className="flex gap-1">
-          <button onClick={() => setIsEditing(true)}>Edit</button>
+          <button onClick={() => setIsEditing(true)} className="edit-item-button">
+            <span className="edit-icon">✏️</span> Edit Item
+          </button>
         </div>
       </div>
       
-      <div className="grid mt-1" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div>
-          <dl>
-            <dt>Category</dt>
-            <dd>
-              <Link to={`/categories/${item.itemCategoryId}`}>
-                {item.categoryName || `Category #${item.itemCategoryId}`}
-              </Link>
-            </dd>
+      <div className="item-details-grid">
+        <div className="item-detail-card">
+          <h4 className="detail-section-title">Item Information</h4>
+          <div className="detail-fields">
+            <div className="detail-field">
+              <dt>Category</dt>
+              <dd>
+                <Link to={`/categories/${item.itemCategoryId}`} className="category-link">
+                  {item.categoryName || `Category #${item.itemCategoryId}`}
+                </Link>
+              </dd>
+            </div>
             
-            <dt>Size</dt>
-            <dd>{item.sizeName || 'None'}</dd>
+            <div className="detail-field">
+              <dt>Size</dt>
+              <dd>{item.sizeName || 'None'}</dd>
+            </div>
             
-            <dt>Condition</dt>
-            <dd>{item.condition}</dd>
+            <div className="detail-field">
+              <dt>Condition</dt>
+              <dd>
+                <span className={`condition-badge ${item.condition.toLowerCase().replace(' ', '-')}`}>
+                  {item.condition}
+                </span>
+              </dd>
+            </div>
             
-            <dt>Location</dt>
-            <dd>{item.location}</dd>
-          </dl>
+            <div className="detail-field">
+              <dt>Location</dt>
+              <dd>
+                <span className="location-badge">
+                  📍 {item.location}
+                </span>
+              </dd>
+            </div>
+          </div>
         </div>
         
-        <div>
-          <dl>
-            <dt>Received Date</dt>
-            <dd>{new Date(item.receivedDate).toLocaleDateString()}</dd>
+        <div className="item-detail-card">
+          <h4 className="detail-section-title">Donation Details</h4>
+          <div className="detail-fields">
+            <div className="detail-field">
+              <dt>Received Date</dt>
+              <dd>{new Date(item.receivedDate).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</dd>
+            </div>
             
-            <dt>Donor Info</dt>
-            <dd>{item.donorInfo || 'Not specified'}</dd>
+            <div className="detail-field">
+              <dt>Donor Info</dt>
+              <dd>{item.donorInfo || 'Not specified'}</dd>
+            </div>
             
-            <dt>Approx. Price</dt>
-            <dd>
-              {item.approxPrice !== null
-                ? `$${item.approxPrice.toFixed(2)}`
-                : 'Not specified'}
-            </dd>
-            
-            <dt>Status</dt>
-            <dd className={item.isActive ? '' : 'muted'}>
-              {item.isActive ? 'Active' : 'Inactive'}
-            </dd>
-          </dl>
+            <div className="detail-field">
+              <dt>Approx. Price</dt>
+              <dd>
+                {item.approxPrice !== null
+                  ? <span className="price">${item.approxPrice.toFixed(2)}</span>
+                  : 'Not specified'}
+              </dd>
+            </div>
+          </div>
         </div>
       </div>
     </div>

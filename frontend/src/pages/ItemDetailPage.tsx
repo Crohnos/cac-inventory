@@ -38,29 +38,38 @@ const ItemDetailPage = () => {
   }
   
   return (
-    <div>
+    <div className="item-detail-page">
       <h1>Item Details</h1>
       
-      {/* Item Header */}
-      <ItemHeader 
-        item={item!} 
-        onRefresh={refetch} 
-      />
+      <div className="item-detail-grid">
+        {/* Left column: Item details and actions */}
+        <div className="item-info-column">
+          {/* Item Header */}
+          <ItemHeader 
+            item={item!} 
+            onRefresh={refetch} 
+          />
+          
+          {/* Item Actions */}
+          <ItemActions 
+            item={item!} 
+            onRefresh={refetch} 
+          />
+        </div>
+        
+        {/* Right column: QR Code prominently displayed */}
+        <div className="qr-code-column">
+          <ItemQrCode 
+            qrCodeValue={item!.qrCodeValue} 
+            qrCodeDataUrl={item!.qrCodeDataUrl} 
+          />
+        </div>
+      </div>
       
-      {/* Item Actions */}
-      <ItemActions 
-        item={item!} 
-        onRefresh={refetch} 
-      />
-      
-      {/* QR Code */}
-      <ItemQrCode 
-        qrCodeValue={item!.qrCodeValue} 
-        qrCodeDataUrl={item!.qrCodeDataUrl} 
-      />
-      
-      {/* Item Photos */}
-      <ItemPhotos itemId={itemId} />
+      {/* Full width: Item Photos */}
+      <div className="item-photos-section">
+        <ItemPhotos itemId={itemId} />
+      </div>
     </div>
   )
 }

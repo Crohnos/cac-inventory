@@ -25,8 +25,7 @@ const ExportOptions = () => {
 
   return (
     <div>
-      <h3>Export Data</h3>
-      <p>Export your inventory data in different formats.</p>
+      <p>Select a format to export your inventory data.</p>
       
       <div className="flex gap-1 flex-wrap mt-1">
         <button onClick={() => handleExport('csv')} className="export-button">

@@ -103,48 +103,58 @@ const ItemPhotos = ({ itemId }: ItemPhotosProps) => {
   
   return (
     <div className="card">
-      <h3>Photos</h3>
-      
-      {/* Upload form */}
-      <form onSubmit={handleUpload} className="mb-1">
-        <div className="grid">
-          <label htmlFor="photo">
-            Select Image(s)
-            <input
-              type="file"
-              id="photo"
-              ref={fileInputRef}
-              accept="image/*"
-              multiple
-              onChange={handleFileChange}
-              required
-            />
-          </label>
-          
-          <label htmlFor="description">
-            Description (optional)
+      <div className="photos-header">
+        <h3>Item Photos</h3>
+        
+        {/* Upload form */}
+        <form onSubmit={handleUpload} className="photo-upload-form">
+          <div className="upload-fields">
+            <div className="file-input-container">
+              <input
+                type="file"
+                id="photo"
+                ref={fileInputRef}
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                required
+                className="file-input"
+              />
+              <label htmlFor="photo" className="file-input-label">
+                <span className="upload-icon">📁</span> 
+                {selectedFiles && selectedFiles.length > 0 
+                  ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected` 
+                  : 'Choose Images'}
+              </label>
+            </div>
+            
             <input
               type="text"
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter a description for the photo(s)"
+              placeholder="Enter a description (optional)"
+              className="description-input"
             />
-          </label>
-        </div>
-        
-        <button 
-          type="submit" 
-          disabled={isUploading || !selectedFiles || selectedFiles.length === 0}
-          className="mt-1"
-        >
-          {isUploading ? 'Uploading...' : 'Upload Photo(s)'}
-        </button>
-      </form>
+            
+            <button 
+              type="submit" 
+              disabled={isUploading || !selectedFiles || selectedFiles.length === 0}
+              className="upload-button"
+            >
+              {isUploading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+        </form>
+      </div>
       
       {/* Photo gallery */}
       {photos.length === 0 ? (
-        <p><em>No photos uploaded for this item.</em></p>
+        <div className="empty-photos">
+          <div className="empty-icon">📷</div>
+          <p>No photos uploaded for this item yet.</p>
+          <p className="empty-subtext">Photos help identify items more easily.</p>
+        </div>
       ) : (
         <div className="photo-gallery">
           {photos.map(photo => (
@@ -154,18 +164,16 @@ const ItemPhotos = ({ itemId }: ItemPhotosProps) => {
                 alt={photo.description || `Photo ${photo.id}`} 
                 title={photo.description || `Photo ${photo.id}`}
               />
+              {photo.description && (
+                <div className="photo-description">
+                  {photo.description}
+                </div>
+              )}
               <div className="photo-actions">
                 <button 
                   onClick={() => openDeleteDialog(photo.id)}
                   className="delete-photo"
                   aria-label="Delete photo"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    padding: '4px 8px',
-                    fontSize: '14px',
-                  }}
                 >
                   ×
                 </button>

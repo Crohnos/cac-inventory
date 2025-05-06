@@ -108,13 +108,13 @@ body {
 .sidebar-link {
   display: flex;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 1.25rem 2rem;
   text-decoration: none;
   color: var(--text-secondary);
   transition: all 0.2s ease;
   border-left: 4px solid transparent;
   position: relative;
-  margin: 0.25rem 0;
+  margin: 0.35rem 0;
   width: calc(100% - 4px); /* Subtract the left border width */
   box-sizing: border-box;
 }
@@ -144,16 +144,27 @@ body {
 }
 
 .sidebar-icon {
-  margin-right: 1.25rem;
-  font-size: 1.3rem;
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+  min-width: 40px;
+}
+
+.sidebar-link:hover .sidebar-icon,
+.sidebar-link.active .sidebar-icon {
+  color: var(--primary);
 }
 
 .sidebar-text {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .sidebar-footer {
@@ -1362,81 +1373,501 @@ td:nth-child(5) {
   background-color: rgba(var(--primary-rgb), 0.05);
 }
 
-/* Improved Photo gallery */
+/* Enhanced Photo gallery */
 .photo-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
 }
 
 .photo-item {
   position: relative;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  aspect-ratio: 1 / 1;
 }
 
 .photo-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .photo-item img {
   width: 100%;
-  height: 180px;
+  height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.5s ease;
+}
+
+.photo-item:hover img {
+  transform: scale(1.05);
 }
 
 .photo-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.75rem;
+  right: 0.75rem;
   display: flex;
   gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-item:hover .photo-actions {
+  opacity: 1;
 }
 
 .photo-actions button {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 1rem;
-  background-color: var(--card-background-color);
-  opacity: 0.9;
+  font-size: 1.2rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  color: var(--danger);
+  transition: all 0.2s ease;
 }
 
-/* Enhanced QR code container */
-.qr-code-container {
-  text-align: center;
-  margin: 1.5rem 0;
-  display: inline-block;
-  padding: 1.5rem;
-  background-color: var(--card-background-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.photo-actions button:hover {
+  background-color: white;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
 }
 
-.qr-code-container canvas {
-  border: 1px solid var(--border-color);
+.photo-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-item:hover .photo-description {
+  opacity: 1;
+}
+
+/* Photo Upload Form */
+.photos-header {
+  margin-bottom: 1.5rem;
+}
+
+.photo-upload-form {
+  margin-top: 1rem;
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 6px;
   padding: 1rem;
-  background-color: var(--card-background-color);
-  border-radius: 4px;
+  border: 1px solid var(--border-color);
 }
 
-.qr-code-value {
+.upload-fields {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.file-input-container {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.file-input-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-input-label:hover {
+  border-color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.upload-icon {
+  font-size: 1.1rem;
+}
+
+.description-input {
+  flex: 2;
+  min-width: 180px;
+}
+
+.upload-button {
+  background-color: var(--primary);
+  color: white;
+  white-space: nowrap;
+}
+
+.empty-photos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-subtext {
+  font-size: 0.9rem;
+  opacity: 0.7;
   margin-top: 0.5rem;
+}
+
+/* Item Header Styling */
+.item-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.item-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-title-section h2 {
+  margin: 0;
+}
+
+.item-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.item-status-badge.active {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-dark);
+}
+
+.item-status-badge.inactive {
+  background-color: rgba(var(--text-secondary), 0.1);
+  color: var(--text-secondary);
+}
+
+.edit-item-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.edit-item-button:hover {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.item-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.item-detail-card {
+  padding: 1.25rem;
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.detail-section-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-size: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+}
+
+.detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-field dt {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-field dd {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.category-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.category-link:hover {
+  text-decoration: underline;
+}
+
+.condition-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.condition-badge.new {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #2e7d32;
+}
+
+.condition-badge.gently-used {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #f57f17;
+}
+
+.condition-badge.heavily-used {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #d32f2f;
+}
+
+.location-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+}
+
+.price {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+@media (max-width: 768px) {
+  .item-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .item-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .edit-item-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Item Detail Page Layout */
+.item-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.item-detail-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+}
+
+.item-info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.qr-code-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-photos-section {
+  grid-column: 1 / -1;
+}
+
+/* QR Code Styling */
+.qr-code-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-background-color);
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-height: 600px;
+}
+
+.qr-code-card h3 {
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+
+.qr-code-display {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.qr-code-image,
+.qr-code-svg {
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.qr-code-info {
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.qr-value-container {
+  margin-bottom: 0.5rem;
+}
+
+.qr-value-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.qr-value {
   font-family: monospace;
   word-break: break-all;
-  padding: 0.5rem;
-  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  background-color: rgba(var(--primary-rgb), 0.05);
   border-radius: 4px;
+  padding: 0.75rem;
   font-size: 0.85rem;
+  margin: 0;
+  border: 1px solid rgba(var(--primary-rgb), 0.1);
+}
+
+.print-qr-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  width: 100%;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.print-qr-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.print-icon {
+  font-size: 1.1rem;
+}
+
+/* Responsive Item Detail Page */
+@media (max-width: 992px) {
+  .item-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .qr-code-column {
+    order: -1; /* Make QR code appear first on mobile */
+  }
+  
+  .qr-code-card {
+    margin-bottom: 0;
+  }
+  
+  .qr-code-display {
+    padding: 1.5rem;
+  }
+  
+  .item-info-column {
+    gap: 1rem;
+  }
 }
 
 /* Improved Scanner page */
@@ -1613,4 +2044,201 @@ footer {
   margin-top: 3rem;
   padding: 1.5rem 0;
   border-top: 1px solid var(--border-color);
+}
+
+/* Donation Form styling */
+.donation-form-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.donation-form-section {
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  color: var(--primary);
+  font-size: 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  border-radius: 8px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  margin-top: 1.5rem;
+}
+
+.add-another-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.add-another-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.submit-button {
+  min-width: 120px;
+}
+
+/* Size chips styling */
+.sizes-container {
+  margin-top: 1.5rem;
+}
+
+.sizes-title {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.no-sizes-message {
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.size-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.size-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5em 1em;
+  background: var(--card-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 2em;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.size-chip:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.size-name {
+  font-weight: 500;
+}
+
+.size-remove-button {
+  margin-left: 0.5em;
+  background: none;
+  border: none;
+  padding: 0 0.25em;
+  cursor: pointer;
+  font-size: 1.2em;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.size-remove-button:hover {
+  transform: scale(1.2);
+  color: var(--danger);
+}
+
+/* Responsive styles for donation form */
+@media (max-width: 768px) {
+  .donation-form-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+}
+
+/* Import/Export page styling */
+.import-export-page .card {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease;
+}
+
+.import-export-page .card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.import-export-page h2 {
+  color: var(--primary);
+  border-bottom: 2px solid rgba(var(--primary-rgb), 0.15);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.export-button {
+  min-width: 140px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  margin-right: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.export-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Import form styling */
+#importFile {
+  background-color: var(--card-sectionning-background-color, var(--card-background-color));
+  padding: 1rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+#importFile:hover {
+  border-color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.import-errors {
+  background-color: rgba(var(--danger-rgb), 0.08);
+  border-left: 3px solid var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
 }

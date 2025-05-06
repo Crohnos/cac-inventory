@@ -72,106 +72,111 @@ const AddCategoryFormExtended = ({ onSuccess }: AddCategoryFormExtendedProps) =>
   
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid">
-        <label htmlFor="name">
-          Category Name *
-          <input 
-            type="text" 
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter category name" 
-            required 
-          />
-        </label>
-        
-        <label htmlFor="description">
-          Description
-          <textarea 
-            id="description" 
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter category description" 
-            rows={3}
-          ></textarea>
-        </label>
-        
-        <label htmlFor="lowStockThreshold">
-          Low Stock Threshold
-          <input 
-            type="number" 
-            id="lowStockThreshold" 
-            value={lowStockThreshold}
-            onChange={(e) => setLowStockThreshold(e.target.value)}
-            placeholder="5" 
-            min="1" 
-          />
-          <small>Items below this quantity will be highlighted as low stock</small>
-        </label>
-        
-        <div className="form-group">
-          <label htmlFor="sizes">
-            Sizes
-            <div className="flex gap-1">
+      <div className="donation-form-container">
+        {/* Left column - Basic Information */}
+        <div className="donation-form-section">
+          <h3 className="section-title">Basic Information</h3>
+          
+          <div className="form-group">
+            <label htmlFor="name">
+              Category Name *
               <input 
                 type="text" 
-                id="sizes"
-                value={newSize}
-                onChange={(e) => setNewSize(e.target.value)}
-                placeholder="Enter a size name" 
-                style={{ flex: 1 }}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter category name" 
+                required 
               />
-              <button 
-                type="button" 
-                onClick={addSize}
-                disabled={!newSize.trim()}
-              >
-                Add
-              </button>
-            </div>
-            <small>Add common sizes for this category (e.g., S, M, L or 2T, 3T, 4T)</small>
-          </label>
+            </label>
+          </div>
           
-          {sizes.length > 0 && (
-            <div className="size-chips flex flex-wrap gap-1 mt-1">
-              {sizes.map((size, index) => (
-                <div 
-                  key={index} 
-                  className="size-chip"
-                  style={{ 
-                    display: 'inline-block',
-                    padding: '0.5em 1em',
-                    background: 'var(--card-background-color)',
-                    border: '1px solid var(--muted-border-color)',
-                    borderRadius: '2em',
-                  }}
+          <div className="form-group">
+            <label htmlFor="description">
+              Description
+              <textarea 
+                id="description" 
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter category description" 
+                rows={3}
+              ></textarea>
+            </label>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="lowStockThreshold">
+              Low Stock Threshold
+              <input 
+                type="number" 
+                id="lowStockThreshold" 
+                value={lowStockThreshold}
+                onChange={(e) => setLowStockThreshold(e.target.value)}
+                placeholder="5" 
+                min="1" 
+              />
+              <small>Items below this quantity will be highlighted as low stock</small>
+            </label>
+          </div>
+        </div>
+        
+        {/* Right column - Size Management */}
+        <div className="donation-form-section">
+          <h3 className="section-title">Size Management</h3>
+          
+          <div className="form-group">
+            <label htmlFor="sizes">
+              Add Sizes
+              <div className="flex gap-1">
+                <input 
+                  type="text" 
+                  id="sizes"
+                  value={newSize}
+                  onChange={(e) => setNewSize(e.target.value)}
+                  placeholder="Enter a size name" 
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  type="button" 
+                  onClick={addSize}
+                  disabled={!newSize.trim()}
                 >
-                  {size}
-                  <button 
-                    onClick={() => removeSize(index)}
-                    style={{ 
-                      marginLeft: '0.5em',
-                      background: 'none',
-                      border: 'none',
-                      padding: '0 0.25em',
-                      cursor: 'pointer',
-                      fontSize: '1em',
-                      color: 'var(--primary)',
-                    }}
-                    aria-label={`Remove ${size}`}
-                    type="button"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                  Add
+                </button>
+              </div>
+              <small>Add common sizes for this category (e.g., S, M, L or 2T, 3T, 4T)</small>
+            </label>
+          </div>
+          
+          <div className="sizes-container">
+            <h4 className="sizes-title">Added Sizes:</h4>
+            
+            {sizes.length === 0 ? (
+              <p className="no-sizes-message">No sizes added yet</p>
+            ) : (
+              <div className="size-chips-container">
+                {sizes.map((size, index) => (
+                  <div key={index} className="size-chip">
+                    <span className="size-name">{size}</span>
+                    <button 
+                      onClick={() => removeSize(index)}
+                      className="size-remove-button"
+                      aria-label={`Remove ${size}`}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
-      <div className="mt-1">
-        <button type="submit" disabled={createCategory.isPending}>
+      <div className="form-actions">
+        <div></div> {/* Empty div for spacing */}
+        <button type="submit" className="submit-button" disabled={createCategory.isPending}>
           {createCategory.isPending ? 'Creating...' : 'Create Category'}
         </button>
       </div>
