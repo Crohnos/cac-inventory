@@ -2,14 +2,18 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 
+// Determine disk paths - for Render.com deployment
+const basePath = process.env.RENDER ? '/data-uploads' : process.cwd();
+
 // Ensure the data directory exists
-const dataDir = path.join(process.cwd(), 'data');
+const dataDir = path.join(basePath, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
 // Database file path
 const dbPath = path.join(dataDir, 'database.db');
+console.log(`Using database at path: ${dbPath}`);
 
 // Database connection
 const db = new sqlite3.Database(dbPath, (err) => {

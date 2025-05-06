@@ -2,6 +2,7 @@ import express from 'express';
 import morgan from 'morgan';
 import path from 'path';
 import fs from 'fs';
+import cors from 'cors';
 import { initializeDatabase } from './database/setup.js';
 import { errorHandler } from './middleware/index.js';
 import sizeRoutes from './routes/sizeRoutes.js';
@@ -14,28 +15,50 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 console.log(`Setting up Express server on port ${PORT}`);
 
+// Determine disk paths - for Render.com deployment
+const basePath = process.env.RENDER ? '/data-uploads' : process.cwd();
+
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads');
+const uploadsDir = path.join(basePath, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // Ensure temp directory for imports exists
-const tempUploadsDir = path.join(process.cwd(), 'uploads/temp');
+const tempUploadsDir = path.join(uploadsDir, 'temp');
 if (!fs.existsSync(tempUploadsDir)) {
   fs.mkdirSync(tempUploadsDir, { recursive: true });
+}
+
+// Ensure database directory exists
+const dataDir = path.join(basePath, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
 // Middleware
 app.use(express.json());
 app.use(morgan('dev')); // Logging middleware
 
+// CORS configuration
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+console.log(`CORS enabled for origin: ${corsOrigin}`);
+app.use(cors({
+  origin: corsOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  credentials: true,
+}));
+
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 // API routes
 app.get('/', (req, res) => {
-  res.json({ message: 'Rainbow Room API Operational' });
+  res.json({ 
+    message: 'Rainbow Room API Operational',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Mount routes

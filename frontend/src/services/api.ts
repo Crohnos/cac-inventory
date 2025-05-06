@@ -1,8 +1,13 @@
 import axios from 'axios'
 
+// Set API base URL dynamically based on environment
+const API_URL = import.meta.env.PROD 
+  ? import.meta.env.VITE_API_URL || 'https://rainbow-room-api.onrender.com/api'
+  : '/api' // Local development uses Vite proxy
+
 // Create a base Axios instance with default config
 const api = axios.create({
-  baseURL: '/api', // Will be proxied to http://localhost:3001/api via Vite
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
