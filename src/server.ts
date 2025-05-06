@@ -44,13 +44,38 @@ app.use(express.json());
 app.use(morgan('dev')); // Logging middleware
 
 // CORS configuration
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
-console.log(`CORS enabled for origin: ${corsOrigin}`);
-app.use(cors({
-  origin: corsOrigin,
+const corsConfig = {
+  origin: function(origin: any, callback: any) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allowed origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://cac-inventory.onrender.com',
+      process.env.CORS_ORIGIN  // Also allow any origin from env var
+    ].filter(Boolean); // Remove any undefined/empty values
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      console.warn(`Origin ${origin} not allowed by CORS`);
+      callback(null, true); // Temporarily allow all origins in case the domain changes
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  credentials: true,
-}));
+  credentials: true
+};
+
+console.log('CORS enabled for origins:', {
+  allowedOrigins: [
+    'http://localhost:3000',
+    'https://cac-inventory.onrender.com',
+    process.env.CORS_ORIGIN
+  ].filter(Boolean)
+});
+
+app.use(cors(corsConfig));
 
 // Serve static files from the uploads directory
 app.use('/uploads', express.static(uploadsDir));

@@ -13,10 +13,7 @@ services:
       - key: RENDER
         value: "true"
       - key: CORS_ORIGIN
-        fromService:
-          name: rainbow-room-frontend
-          type: web
-          property: url
+        value: "https://cac-inventory.onrender.com"
 
   # Frontend static site
   - type: web
