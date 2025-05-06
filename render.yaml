@@ -12,19 +12,11 @@ services:
         value: 10000
       - key: RENDER
         value: "true"
-      - key: RENDER_DATA_DIR
-        value: "/var/data"
-      - key: RENDER_UPLOADS_DIR
-        value: "/var/uploads"
       - key: CORS_ORIGIN
         fromService:
           name: rainbow-room-frontend
           type: web
           property: url
-    disk:
-      name: data-and-uploads
-      mountPath: /var
-      sizeGB: 1
 
   # Frontend static site
   - type: web

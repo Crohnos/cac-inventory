@@ -10,9 +10,9 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Determine data and upload directories based on environment variables
-const dataDir = process.env.RENDER_DATA_DIR || path.join(process.cwd(), 'data');
-const uploadsDir = process.env.RENDER_UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+// Use directories within the project directory for Render's free tier
+const dataDir = path.join(process.cwd(), 'data');
+const uploadsDir = path.join(process.cwd(), 'uploads');
 const tempUploadsDir = path.join(uploadsDir, 'temp');
 
 async function initializeRender() {
@@ -25,19 +25,26 @@ async function initializeRender() {
     // Initialize directories if they don't exist
     console.log('Checking directories...');
     
-    if (!fs.existsSync(dataDir)) {
-      console.log(`Creating data directory: ${dataDir}`);
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    
-    if (!fs.existsSync(uploadsDir)) {
-      console.log(`Creating uploads directory: ${uploadsDir}`);
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-    
-    if (!fs.existsSync(tempUploadsDir)) {
-      console.log(`Creating temp uploads directory: ${tempUploadsDir}`);
-      fs.mkdirSync(tempUploadsDir, { recursive: true });
+    try {
+      if (!fs.existsSync(dataDir)) {
+        console.log(`Creating data directory: ${dataDir}`);
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      
+      if (!fs.existsSync(uploadsDir)) {
+        console.log(`Creating uploads directory: ${uploadsDir}`);
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      if (!fs.existsSync(tempUploadsDir)) {
+        console.log(`Creating temp uploads directory: ${tempUploadsDir}`);
+        fs.mkdirSync(tempUploadsDir, { recursive: true });
+      }
+      
+      console.log('All directories created or verified successfully');
+    } catch (err) {
+      console.warn(`Warning: Could not create one or more directories: ${err.message}`);
+      console.warn('Will attempt to continue with existing directories...');
     }
     
     // Check if a database already exists

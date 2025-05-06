@@ -15,33 +15,28 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 console.log(`Setting up Express server on port ${PORT}`);
 
-// Determine uploads directory path
-// For Render.com: use the disk mount path if specified, or default to project dir
-let uploadsDir = process.env.RENDER_UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-
-// Log the uploads directory path
-console.log(`Using uploads directory: ${uploadsDir}`);
-
-// Define temp uploads directory path
+// Use project directory for uploads - simpler for Render's free tier
+const uploadsDir = path.join(process.cwd(), 'uploads');
 const tempUploadsDir = path.join(uploadsDir, 'temp');
 
-// Only create directories if we're not on Render
-// (Render should have the disk already mounted)
-if (!process.env.RENDER) {
-  // Ensure uploads directory exists
+// Log the uploads directory paths
+console.log(`Using uploads directory: ${uploadsDir}`);
+console.log(`Using temp uploads directory: ${tempUploadsDir}`);
+
+// Create directories if they don't exist
+try {
   if (!fs.existsSync(uploadsDir)) {
     console.log('Creating uploads directory...');
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Ensure temp directory for imports exists
   if (!fs.existsSync(tempUploadsDir)) {
     console.log('Creating temp uploads directory...');
     fs.mkdirSync(tempUploadsDir, { recursive: true });
   }
-} else {
-  // On Render, just log the directory paths
-  console.log(`Using temp uploads directory: ${tempUploadsDir}`);
+} catch (err) {
+  console.warn(`Warning: Could not create uploads directories: ${err.message}`);
+  console.warn('Will attempt to continue with existing directories...');
 }
 
 // Middleware
