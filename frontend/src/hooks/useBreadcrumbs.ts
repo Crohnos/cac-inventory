@@ -21,14 +21,10 @@ export const useBreadcrumbs = (
   const itemId = params.itemId ? parseInt(params.itemId) : undefined
   
   // Fetch category data if needed
-  const { data: category } = useCategory(categoryId || 0, {
-    enabled: !!categoryId
-  })
+  const { data: category } = useCategory(categoryId || 0)
   
   // Fetch item data if needed
-  const { data: item } = useDetail(itemId || 0, {
-    enabled: !!itemId
-  })
+  const { data: item } = useDetail(itemId || 0)
   
   // Generate breadcrumbs based on pathname and data
   useEffect(() => {

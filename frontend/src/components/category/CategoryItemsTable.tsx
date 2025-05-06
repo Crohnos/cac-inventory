@@ -24,7 +24,6 @@ interface CategoryItemsTableProps {
 const columnHelper = createColumnHelper<ItemDetail>()
 
 const CategoryItemsTable = ({ 
-  categoryId, 
   items, 
   isLoading, 
   error, 

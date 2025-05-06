@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoryService } from '../services'
 import { 
   CreateItemCategoryRequest, 
-  UpdateItemCategoryRequest,
-  ItemCategory
+  UpdateItemCategoryRequest
 } from '../types/apiTypes'
 
 // Query keys

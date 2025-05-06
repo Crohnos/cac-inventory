@@ -30,12 +30,12 @@ const categoryRoute = new Route({
   getParentRoute: () => rootRoute,
   path: 'categories/$categoryId',
   component: ItemCategoryPage,
-  validateParams: ({ categoryId }: CategoryParams) => {
+  parseParams: ({ categoryId }: CategoryParams) => {
     // Ensure categoryId is a valid number
     const parsed = parseInt(categoryId, 10)
     return !isNaN(parsed) && String(parsed) === categoryId
       ? { categoryId }
-      : null
+      : { categoryId: '' }
   },
 })
 
@@ -43,12 +43,12 @@ const itemRoute = new Route({
   getParentRoute: () => rootRoute,
   path: 'items/$itemId',
   component: ItemDetailPage,
-  validateParams: ({ itemId }: ItemParams) => {
+  parseParams: ({ itemId }: ItemParams) => {
     // Ensure itemId is a valid number
     const parsed = parseInt(itemId, 10)
     return !isNaN(parsed) && String(parsed) === itemId
       ? { itemId }
-      : null
+      : { itemId: '' }
   },
 })
 

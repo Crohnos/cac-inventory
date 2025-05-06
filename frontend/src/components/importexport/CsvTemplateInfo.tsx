@@ -1,4 +1,4 @@
-import React from 'react'
+// No imports needed
 
 const CsvTemplateInfo = () => {
   const sampleCsvContent = `categoryName,sizeName,condition,location,receivedDate,donorInfo,approxPrice,isActive

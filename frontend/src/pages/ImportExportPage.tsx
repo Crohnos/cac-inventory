@@ -4,7 +4,7 @@ import ExportOptions from '../components/importexport/ExportOptions'
 import ImportForm from '../components/importexport/ImportForm'
 
 const ImportExportPage = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [, setRefreshTrigger] = useState(0)
   
   // Fetch data to invalidate cache after import
   useCategories()

@@ -42,8 +42,7 @@ const AddItemForm = ({ initialCategoryId, onSuccess }: AddItemFormProps) => {
   // Fetch available sizes for selected category
   const {
     data: categorySizes = [],
-    isLoading: isLoadingSizes,
-    error: sizesError
+    isLoading: isLoadingSizes
   } = useCategorySizes(categoryId ? parseInt(categoryId) : 0)
   
   // Create item mutation

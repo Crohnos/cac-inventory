@@ -27,7 +27,6 @@ const ItemHeader = ({ item, onRefresh }: ItemHeaderProps) => {
   
   // Fetch category data
   const { 
-    data: category,
     isLoading: isLoadingCategory
   } = useCategory(item.itemCategoryId)
   
