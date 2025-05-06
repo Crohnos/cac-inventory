@@ -22,6 +22,9 @@ let uploadsDir = process.env.RENDER_UPLOADS_DIR || path.join(process.cwd(), 'upl
 // Log the uploads directory path
 console.log(`Using uploads directory: ${uploadsDir}`);
 
+// Define temp uploads directory path
+const tempUploadsDir = path.join(uploadsDir, 'temp');
+
 // Only create directories if we're not on Render
 // (Render should have the disk already mounted)
 if (!process.env.RENDER) {
@@ -32,15 +35,13 @@ if (!process.env.RENDER) {
   }
 
   // Ensure temp directory for imports exists
-  const tempUploadsDir = path.join(uploadsDir, 'temp');
   if (!fs.existsSync(tempUploadsDir)) {
     console.log('Creating temp uploads directory...');
     fs.mkdirSync(tempUploadsDir, { recursive: true });
   }
 } else {
-  // On Render, just ensure the temp directory path is defined
-  const tempUploadsDir = path.join(uploadsDir, 'temp');
-  console.log(`Temp uploads directory: ${tempUploadsDir}`);
+  // On Render, just log the directory paths
+  console.log(`Using temp uploads directory: ${tempUploadsDir}`);
 }
 
 // Middleware
