@@ -34,7 +34,7 @@ try {
     console.log('Creating temp uploads directory...');
     fs.mkdirSync(tempUploadsDir, { recursive: true });
   }
-} catch (err) {
+} catch (err: any) {
   console.warn(`Warning: Could not create uploads directories: ${err.message}`);
   console.warn('Will attempt to continue with existing directories...');
 }

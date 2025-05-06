@@ -14,7 +14,7 @@ try {
     console.log('Creating data directory...');
     fs.mkdirSync(dataDir, { recursive: true });
   }
-} catch (err) {
+} catch (err: any) {
   console.warn(`Warning: Could not create data directory: ${err.message}`);
   console.warn('Will attempt to continue with existing directory...');
 }

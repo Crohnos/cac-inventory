@@ -43,7 +43,8 @@ async function initializeRender() {
       
       console.log('All directories created or verified successfully');
     } catch (err) {
-      console.warn(`Warning: Could not create one or more directories: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.warn(`Warning: Could not create one or more directories: ${errorMessage}`);
       console.warn('Will attempt to continue with existing directories...');
     }
     
