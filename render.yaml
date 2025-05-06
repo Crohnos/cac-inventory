@@ -10,6 +10,12 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: RENDER
+        value: "true"
+      - key: RENDER_DATA_DIR
+        value: "/var/data"
+      - key: RENDER_UPLOADS_DIR
+        value: "/var/uploads"
       - key: CORS_ORIGIN
         fromService:
           name: rainbow-room-frontend
@@ -17,7 +23,7 @@ services:
           property: url
     disk:
       name: data-and-uploads
-      mountPath: /data-uploads
+      mountPath: /var
       sizeGB: 1
 
   # Frontend static site

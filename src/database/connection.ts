@@ -2,13 +2,20 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-// Determine disk paths - for Render.com deployment
-const basePath = process.env.RENDER ? '/data-uploads' : process.cwd();
+// Determine database directory path
+// For Render.com: use the disk mount path if specified, or default to project dir
+let dataDir = process.env.RENDER_DATA_DIR || path.join(process.cwd(), 'data');
 
-// Ensure the data directory exists
-const dataDir = path.join(basePath, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+// Log the data directory path
+console.log(`Using database directory: ${dataDir}`);
+
+// Only create the directory if we're not on Render
+// (Render should have the disk already mounted)
+if (!process.env.RENDER) {
+  if (!fs.existsSync(dataDir)) {
+    console.log('Creating data directory...');
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
 }
 
 // Database file path

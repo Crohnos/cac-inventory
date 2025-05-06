@@ -15,7 +15,8 @@
     "refresh-db": "npm run build && npm run reset-db && npm run populate-db",
     "build:frontend": "cd frontend && npm run build",
     "build:all": "npm run build && npm run build:frontend",
-    "render-build": "npm install && npm run build && npm run setup-db",
+    "render-init": "node scripts/render-init.js",
+    "render-build": "npm install && npm run build && NODE_ENV=production RENDER=true RENDER_DATA_DIR=/var/data RENDER_UPLOADS_DIR=/var/uploads node scripts/render-init.js",
     "render-start": "npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

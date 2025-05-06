@@ -15,25 +15,32 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 console.log(`Setting up Express server on port ${PORT}`);
 
-// Determine disk paths - for Render.com deployment
-const basePath = process.env.RENDER ? '/data-uploads' : process.cwd();
+// Determine uploads directory path
+// For Render.com: use the disk mount path if specified, or default to project dir
+let uploadsDir = process.env.RENDER_UPLOADS_DIR || path.join(process.cwd(), 'uploads');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(basePath, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Log the uploads directory path
+console.log(`Using uploads directory: ${uploadsDir}`);
 
-// Ensure temp directory for imports exists
-const tempUploadsDir = path.join(uploadsDir, 'temp');
-if (!fs.existsSync(tempUploadsDir)) {
-  fs.mkdirSync(tempUploadsDir, { recursive: true });
-}
+// Only create directories if we're not on Render
+// (Render should have the disk already mounted)
+if (!process.env.RENDER) {
+  // Ensure uploads directory exists
+  if (!fs.existsSync(uploadsDir)) {
+    console.log('Creating uploads directory...');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
 
-// Ensure database directory exists
-const dataDir = path.join(basePath, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+  // Ensure temp directory for imports exists
+  const tempUploadsDir = path.join(uploadsDir, 'temp');
+  if (!fs.existsSync(tempUploadsDir)) {
+    console.log('Creating temp uploads directory...');
+    fs.mkdirSync(tempUploadsDir, { recursive: true });
+  }
+} else {
+  // On Render, just ensure the temp directory path is defined
+  const tempUploadsDir = path.join(uploadsDir, 'temp');
+  console.log(`Temp uploads directory: ${tempUploadsDir}`);
 }
 
 // Middleware
