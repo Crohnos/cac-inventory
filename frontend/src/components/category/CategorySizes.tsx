@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import Select, { components, OptionProps, SingleValue } from 'react-select'
+import Select, { components, OptionProps, SingleValue, ActionMeta, MultiValue } from 'react-select'
 import { 
   useCategorySizes, 
   useSizes, 
@@ -143,7 +143,13 @@ const CategorySizes = ({ categoryId }: CategorySizesProps) => {
   }
   
   // Handle dropdown option selection
-  const handleSelectChange = (option: SingleValue<SizeOption>) => {
+  const handleSelectChange = (
+    newValue: SingleValue<SizeOption> | MultiValue<SizeOption>,
+    actionMeta: ActionMeta<SizeOption>
+  ) => {
+    // Since we're using Single mode, we can safely cast to SingleValue
+    const option = newValue as SingleValue<SizeOption>;
+    
     if (option?.isCustom) {
       // Open the add new size modal
       setShowAddSizeModal(true)

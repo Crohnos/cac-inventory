@@ -36,10 +36,9 @@ const CategoryTable = ({ data, isLoading, error, onRetry }: CategoryTableProps) 
       columnHelper.accessor('name', {
         header: 'Category',
         cell: info => {
-          const description = info.row.original.description || 'No description available';
+          // Get values from row data
           const totalQuantity = info.row.original.totalQuantity ?? 0;
           const threshold = info.row.original.lowStockThreshold;
-          const isLowStock = totalQuantity < threshold;
           
           return (
             <div className="category-mobile-cell">
@@ -120,12 +119,10 @@ const CategoryTable = ({ data, isLoading, error, onRetry }: CategoryTableProps) 
     [isMobile]
   )
 
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
   // Handle window resize to adjust table view
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
+      // React to window resize if needed in the future
     };
     
     window.addEventListener('resize', handleResize);
@@ -201,11 +198,11 @@ const CategoryTable = ({ data, isLoading, error, onRetry }: CategoryTableProps) 
               <tr 
                 key={row.id}
                 className={
-                  row.original.totalQuantity === 0 
+                  (row.original.totalQuantity ?? 0) === 0 
                     ? 'out-of-stock' 
-                    : row.original.totalQuantity < row.original.lowStockThreshold * 0.5
+                    : (row.original.totalQuantity ?? 0) < row.original.lowStockThreshold * 0.5
                     ? 'critical-stock'
-                    : row.original.totalQuantity < row.original.lowStockThreshold
+                    : (row.original.totalQuantity ?? 0) < row.original.lowStockThreshold
                     ? 'low-stock'
                     : ''
                 }

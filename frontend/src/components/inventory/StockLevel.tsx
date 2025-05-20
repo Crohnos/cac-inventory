@@ -10,7 +10,7 @@ const StockLevel: React.FC<StockLevelProps> = ({ current, threshold }) => {
   const isZero = current === 0;
   const isCritical = current > 0 && current < threshold * 0.5;
   const isLow = current >= threshold * 0.5 && current < threshold;
-  const isGood = current >= threshold;
+  // const isGood = current >= threshold; // Calculate but unused
   
   // Calculate percentage for the progress bar
   let percentageFull = 0;
