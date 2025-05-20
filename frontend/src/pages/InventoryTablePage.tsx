@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCategories } from '../hooks'
 import CategoryTable from '../components/inventory/CategoryTable'
 import AddCategoryForm from '../components/inventory/AddCategoryForm'
@@ -67,21 +67,50 @@ const InventoryTablePage = () => {
     setFilters(newFilters)
   }
   
+  // Check if we're on mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Update on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
-    <div>
-      <h1>Inventory</h1>
-      <p>Manage your inventory categories and track stock levels.</p>
+    <div className="inventory-page">
+      <header className="inventory-header">
+        <h1>{isMobile ? 'Inventory' : 'Inventory Management'}</h1>
+        {!isMobile && <p>Manage your inventory categories and track stock levels.</p>}
+      </header>
       
-      <div className="mb-1">
-        <div className="flex justify-between items-center mb-1">
-          <h2>Categories</h2>
-          <button onClick={() => setShowAddForm(!showAddForm)}>
-            {showAddForm ? 'Cancel' : 'Add New Category'}
-          </button>
+      <div className="inventory-content mb-1">
+        <div className="inventory-actions mb-1">
+          <div className="flex flex-wrap gap-1 justify-between items-center">
+            <h2 className="categories-title" style={{ margin: 0 }}>Categories</h2>
+            <button 
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: isMobile ? '0.4rem 0.6rem' : '0.5rem 1rem'
+              }}
+            >
+              <span>{showAddForm ? '✕' : '+'}</span>
+              <span>{showAddForm ? 'Cancel' : (isMobile ? 'Add' : 'Add Category')}</span>
+            </button>
+          </div>
         </div>
         
         {showAddForm && (
-          <div className="card mb-1">
+          <div className="card mb-1" style={{ padding: isMobile ? '0.75rem' : '1rem' }}>
             <AddCategoryForm onSuccess={handleAddSuccess} />
           </div>
         )}
@@ -89,7 +118,7 @@ const InventoryTablePage = () => {
         {/* Advanced Filters */}
         <AdvancedFilters onFilterChange={handleFilterChange} />
         
-        <div className="card">
+        <div className="inventory-table-container card" style={{ padding: isMobile ? '0.5rem' : '1rem' }}>
           <CategoryTable 
             data={filteredData} 
             isLoading={isLoading} 

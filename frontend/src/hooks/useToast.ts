@@ -12,10 +12,25 @@ interface Toast {
 export const useToast = () => {
   const [toasts, setToasts] = useState<Toast[]>([])
   
-  // Add a new toast
+  // Add a new toast with deduplication
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type }])
+    
+    // Check if this message already exists to prevent duplicates
+    setToasts(prev => {
+      // If we already have this exact message and type, don't add it again
+      const isDuplicate = prev.some(toast => 
+        toast.message === message && 
+        toast.type === type
+      );
+      
+      if (isDuplicate) {
+        return prev;
+      }
+      
+      return [...prev, { id, message, type }];
+    })
+    
     return id
   }, [])
   

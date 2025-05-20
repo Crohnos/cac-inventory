@@ -10,7 +10,7 @@ const Navbar = () => {
   }
   
   return (
-    <nav className="container">
+    <nav className="custom-navbar">
       <div className="navbar-brand">
         <Link to="/" className="logo-link">
           <svg 

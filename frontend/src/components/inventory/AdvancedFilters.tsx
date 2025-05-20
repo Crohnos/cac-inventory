@@ -82,7 +82,7 @@ const AdvancedFilters = ({ onFilterChange, initialFilters = {} }: AdvancedFilter
       
       {expanded && (
         <div className="filter-controls mt-1 card">
-          <div className="grid grid-responsive" style={{ '--grid-template-columns': 'repeat(auto-fill, minmax(250px, 1fr))' } as React.CSSProperties}>
+          <div className="grid grid-responsive" style={{ '--grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))' } as React.CSSProperties}>
             <div className="form-group">
               <label htmlFor="name">
                 Category Name

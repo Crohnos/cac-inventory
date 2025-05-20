@@ -1,0 +1,389 @@
+/* Mobile-optimized QR Scanner Styles */
+
+/* Container for the scanner */
+.scanner-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Scanner card styling */
+.scanner-card {
+  border-radius: var(--pico-border-radius);
+  overflow: hidden;
+  box-shadow: var(--pico-box-shadow);
+}
+
+/* Camera view container */
+.camera-view {
+  position: relative;
+  width: 100%;
+  border-radius: var(--pico-border-radius);
+  overflow: hidden;
+  background-color: var(--pico-background-color-dim, #000);
+  margin-bottom: var(--pico-spacing);
+}
+
+/* Media queries for responsive height */
+@media screen and (max-width: 480px) {
+  .camera-view {
+    height: 65vh;
+  }
+}
+
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .camera-view {
+    height: 60vh;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .camera-view {
+    height: 50vh;
+  }
+}
+
+/* Landscape mode */
+@media screen and (orientation: landscape) and (max-width: 900px) {
+  .camera-view {
+    height: 80vh;
+  }
+  
+  .scanner-container {
+    max-width: 100%;
+  }
+}
+
+/* Improved targeting box */
+.targeting-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--pico-primary);
+  border-radius: var(--pico-border-radius);
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+  animation: pulse-border 2s infinite;
+}
+
+/* Corner markers */
+.corner-marker {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: var(--pico-primary);
+  border-width: 4px;
+}
+
+.corner-top-left {
+  top: -2px;
+  left: -2px;
+  border-top-style: solid;
+  border-left-style: solid;
+  border-top-left-radius: var(--pico-border-radius);
+}
+
+.corner-top-right {
+  top: -2px;
+  right: -2px;
+  border-top-style: solid;
+  border-right-style: solid;
+  border-top-right-radius: var(--pico-border-radius);
+}
+
+.corner-bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-bottom-style: solid;
+  border-left-style: solid;
+  border-bottom-left-radius: var(--pico-border-radius);
+}
+
+.corner-bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-bottom-style: solid;
+  border-right-style: solid;
+  border-bottom-right-radius: var(--pico-border-radius);
+}
+
+/* Targeting box size adjustments */
+@media screen and (orientation: portrait) {
+  .targeting-box {
+    width: 70%;
+    height: 40%;
+  }
+}
+
+@media screen and (orientation: landscape) {
+  .targeting-box {
+    width: 50%;
+    height: 60%;
+  }
+}
+
+/* Status indicators */
+.scanning-indicator {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--pico-contrast-inverse, white);
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  border-radius: var(--pico-border-radius);
+  margin: 0 auto;
+  width: fit-content;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.indicator-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: var(--pico-primary);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.helper-text {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--pico-contrast-inverse, white);
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: var(--pico-border-radius);
+  margin: 0 auto;
+  width: fit-content;
+  max-width: 80%;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-size: 0.95rem;
+}
+
+/* Button styling */
+.camera-button {
+  width: 100%;
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--pico-border-radius);
+}
+
+/* Tips section */
+.scanner-tips {
+  background-color: var(--pico-card-background-color);
+  padding: var(--pico-spacing);
+  border-radius: var(--pico-border-radius);
+  border: 1px solid var(--pico-muted-border-color);
+  margin-top: var(--pico-spacing);
+}
+
+.tips-title {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+}
+
+.tips-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
+/* Instructions grid */
+.instructions-grid {
+  display: grid;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+@media screen and (max-width: 480px) {
+  .instructions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media screen and (min-width: 481px) {
+  .instructions-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.instruction-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--pico-card-background-color);
+  padding: var(--pico-spacing);
+  border-radius: var(--pico-border-radius);
+}
+
+.step-number {
+  width: 48px;
+  height: 48px;
+  background: var(--pico-background-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  color: var(--pico-primary);
+  font-weight: bold;
+}
+
+.step-text {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Animations */
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(var(--pico-primary-rgb, 33, 150, 243), 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.5), 0 0 0 10px rgba(var(--pico-primary-rgb, 33, 150, 243), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(var(--pico-primary-rgb, 33, 150, 243), 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Transition effects */
+.scanner-container * {
+  transition: all 0.3s ease;
+}
+
+/* Fullscreen mode optimizations */
+:fullscreen .camera-view {
+  height: 80vh;
+}
+
+:fullscreen .scanner-container {
+  max-width: 100%;
+}
+
+/* Scanner page container */
+.scanner-page-container {
+  padding: var(--pico-spacing);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.scanner-intro {
+  margin-bottom: var(--pico-spacing);
+  color: var(--pico-muted-color);
+  font-size: var(--pico-font-size);
+}
+
+/* Card styling improved */
+.instructions-card {
+  margin-top: var(--pico-spacing);
+  border-radius: var(--pico-border-radius);
+  overflow: hidden;
+  background-color: var(--pico-card-background-color);
+  box-shadow: var(--pico-box-shadow);
+}
+
+.instructions-card header {
+  padding: var(--pico-spacing);
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.instructions-card header h3 {
+  margin: 0;
+  color: var(--pico-primary);
+}
+
+.scanner-tips-footer {
+  margin-top: var(--pico-spacing);
+  padding: var(--pico-spacing);
+  background-color: var(--pico-background-color);
+  border-radius: var(--pico-border-radius);
+  font-size: 0.85rem;
+  border-left: 3px solid var(--pico-primary);
+}
+
+.tips-heading {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.error-card {
+  margin-top: var(--pico-spacing);
+  border-radius: var(--pico-border-radius);
+  background-color: var(--pico-card-background-color);
+  border-left: 4px solid var(--pico-form-element-invalid-border-color, red);
+  box-shadow: var(--pico-box-shadow);
+  padding: var(--pico-spacing);
+}
+
+.item-result-card {
+  margin-top: var(--pico-spacing);
+}
+
+.item-error-actions {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--pico-spacing);
+}
+
+.error-hint {
+  color: var(--pico-muted-color);
+}
+
+.no-item-found {
+  padding: var(--pico-spacing);
+}
+
+.scanned-result {
+  background-color: var(--pico-background-color);
+  padding: var(--pico-spacing);
+  border-radius: var(--pico-border-radius);
+  margin-bottom: var(--pico-spacing);
+  border: 1px solid var(--pico-primary);
+}
+
+.scanned-result h3 {
+  color: var(--pico-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.qr-value {
+  word-break: break-all;
+  font-family: monospace;
+  background-color: var(--pico-card-background-color);
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  border-radius: var(--pico-border-radius);
+  border: 1px solid var(--pico-muted-border-color);
+  margin-bottom: 0;
+}

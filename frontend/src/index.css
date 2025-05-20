@@ -1,6 +1,8 @@
 /* Custom Rainbow Room styles beyond Pico CSS */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+
+
 /* Color variables */
 :root {
   --primary-light: #e3f2fd;
@@ -25,8 +27,8 @@ body {
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   /* Use PicoCSS default background color and text color */
-  background-color: var(--background-color);
-  color: var(--color);
+  background-color: var(--pico-background-color, var(--background-color));
+  color: var(--pico-color, var(--color));
 }
 
 /* New sidebar layout */
@@ -37,10 +39,10 @@ body {
 
 /* Sidebar styles */
 .sidebar {
-  width: 390px; /* Increased from 260px (by 50%) */
-  background-color: var(--card-background-color);
-  background-image: linear-gradient(to bottom, rgba(var(--primary-rgb), 0.04), rgba(var(--primary-rgb), 0.01));
-  border-right: 1px solid var(--border-color);
+  width: 300px;
+  background-color: var(--pico-background-color-dim);
+  color: var(--pico-color);
+  border-right: 1px solid var(--pico-muted-border-color);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -48,14 +50,13 @@ body {
   top: 0;
   bottom: 0;
   z-index: 1000;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  padding: 1rem 0;
+  overflow-y: auto;
 }
 
 .sidebar-header {
-  padding: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+  border-bottom: 1px solid var(--pico-muted-border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -66,8 +67,7 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--primary);
-  transition: opacity 0.2s ease;
+  color: var(--pico-primary);
 }
 
 .sidebar-logo-link:hover {
@@ -75,17 +75,15 @@ body {
 }
 
 .sidebar-title {
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin-left: 1rem;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-left: 0.75rem;
 }
 
 .sidebar-content {
   flex: 1;
-  padding: 1.5rem 0;
+  padding: 0.5rem 0;
   overflow-y: auto;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .sidebar-nav {
@@ -101,83 +99,57 @@ body {
 }
 
 .sidebar-menu-item {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   width: 100%;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  padding: 1.25rem 2rem;
+  padding: 0.75rem 1rem;
   text-decoration: none;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-  border-left: 4px solid transparent;
-  position: relative;
-  margin: 0.35rem 0;
-  width: calc(100% - 4px); /* Subtract the left border width */
-  box-sizing: border-box;
+  color: var(--pico-color);
+  border-left: 3px solid transparent;
 }
 
 .sidebar-link:hover {
-  background-color: rgba(var(--primary-rgb), 0.05);
-  color: var(--primary-dark);
+  background-color: var(--pico-background-color);
+  color: var(--pico-color);
 }
 
 .sidebar-link.active {
-  background-color: rgba(var(--primary-rgb), 0.1);
-  color: var(--primary);
-  border-left-color: var(--primary);
+  background-color: var(--pico-card-background-color);
+  color: var(--pico-primary);
+  border-left-color: var(--pico-primary);
   font-weight: 500;
-}
-
-.sidebar-link.active::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 60%;
-  background-color: var(--primary);
-  border-radius: 4px 0 0 4px;
 }
 
 .sidebar-icon {
-  margin-right: 1.5rem;
+  margin-right: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
-  min-width: 40px;
-}
-
-.sidebar-link:hover .sidebar-icon,
-.sidebar-link.active .sidebar-icon {
-  color: var(--primary);
+  color: inherit;
+  min-width: 30px;
 }
 
 .sidebar-text {
-  font-size: 1.25rem;
-  letter-spacing: 0.01em;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
 }
 
 .sidebar-footer {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--border-color);
+  padding: 1rem;
+  border-top: 1px solid var(--pico-muted-border-color);
   text-align: center;
 }
 
 .sidebar-footer-text {
-  color: var(--text-secondary);
+  color: var(--pico-muted-color);
   margin: 0;
-  opacity: 0.7;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 /* Mobile header */
@@ -189,8 +161,9 @@ body {
   right: 0;
   height: 60px;
   padding: 0 1rem;
-  background-color: var(--card-background-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--pico-background-color-dim);
+  color: var(--pico-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
   z-index: 100;
   align-items: center;
 }
@@ -204,19 +177,20 @@ body {
   align-items: center;
   justify-content: center;
   margin-right: 1rem;
+  margin: 0;
 }
 
 .mobile-title {
   font-weight: 700;
   font-size: 1.2rem;
-  color: var(--primary);
+  color: var(--pico-primary, var(--primary));
 }
 
 /* Main content area */
 .main-content {
   flex: 1;
   min-width: 0;
-  margin-left: 390px; /* Updated to match new sidebar width */
+  margin-left: 300px; /* Match sidebar width */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -238,6 +212,7 @@ body {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: var(--pico-modal-overlay-backdrop-filter, blur(0.375rem));
   z-index: 999;
   display: none;
 }
@@ -247,9 +222,10 @@ body {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: var(--text-secondary);
+  color: var(--pico-muted-color);
   cursor: pointer;
   padding: 0.25rem;
+  margin: 0;
 }
 
 /* Footer */
@@ -264,12 +240,15 @@ body {
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
-    box-shadow: none;
+    width: 100%;
+    max-width: 300px;
+    background-color: var(--pico-background-color-dim);
+    color: var(--pico-color);
   }
   
   .sidebar-mobile-open {
     transform: translateX(0);
-    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--pico-box-shadow);
   }
   
   .sidebar-backdrop {
@@ -342,6 +321,49 @@ body {
   }
 }
 
+/* Custom navbar styling */
+.custom-navbar {
+  width: 100%;
+  background-color: #1b1b1b;
+  color: #ffffff;
+  border-radius: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.navbar-brand .logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #2196f3;
+}
+
+.navbar-menu {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 1rem;
+}
+
+.navbar-menu a {
+  color: #e0e0e0;
+  text-decoration: none;
+}
+
+.navbar-menu a:hover {
+  color: #2196f3;
+}
+
+.navbar-menu a.active {
+  color: #2196f3;
+  font-weight: bold;
+}
+
 /* Nav links in other areas of the app */
 .nav-link {
   display: flex;
@@ -400,13 +422,13 @@ button, [role="button"], .button {
 }
 
 button.primary, [role="button"].primary, .button.primary {
-  background-color: var(--primary);
-  color: var(--contrast, white);
+  background-color: var(--pico-primary, var(--primary));
+  color: var(--pico-primary-inverse, var(--contrast, white));
 }
 
 button.danger, [role="button"].danger, .button.danger {
   background-color: var(--danger);
-  color: var(--contrast, white);
+  color: var(--pico-contrast-inverse, var(--contrast, white));
 }
 
 button.success, [role="button"].success, .button.success {
@@ -421,15 +443,15 @@ button.warning, [role="button"].warning, .button.warning {
 
 button.secondary, [role="button"].secondary, .button.secondary {
   background-color: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  color: var(--pico-primary, var(--primary));
+  border: 1px solid var(--pico-primary, var(--primary));
 }
 
 button.link, [role="button"].link, .button.link {
   background: none;
   border: none;
   padding: 0.3rem 0.5rem;
-  color: var(--primary);
+  color: var(--pico-primary, var(--primary));
   text-decoration: underline;
   font-weight: normal;
 }
@@ -635,9 +657,9 @@ button:disabled {
   margin-bottom: 1rem;
   padding: 1rem;
   border-radius: 8px;
-  background-color: var(--card-background-color);
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color);
+  background-color: var(--pico-background-color, var(--card-background-color));
+  box-shadow: var(--pico-box-shadow, var(--card-shadow));
+  border: 1px solid var(--pico-muted-border-color, var(--border-color));
   transition: box-shadow 0.2s ease;
 }
 
@@ -647,7 +669,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color, var(--border-color));
 }
 
 .card-header h3 {
@@ -713,19 +735,66 @@ tr:hover td {
   background-color: rgba(0, 0, 0, 0.025);
 }
 
+/* Stock status row styling */
+.out-of-stock {
+  background-color: rgba(244, 67, 54, 0.15) !important;
+  position: relative;
+}
+
+.critical-stock {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+  position: relative;
+}
+
 .low-stock {
-  background-color: var(--danger-light) !important;
+  background-color: rgba(255, 193, 7, 0.1) !important;
   position: relative;
 }
 
-.low-stock td {
+.out-of-stock td, .critical-stock td, .low-stock td {
   position: relative;
   background-color: transparent !important;
 }
 
-/* Override hover effect for low-stock rows to maintain visibility */
-.low-stock:hover td {
+/* Override hover effect for status rows to maintain visibility */
+.out-of-stock:hover td, .critical-stock:hover td, .low-stock:hover td {
   background-color: transparent !important;
+}
+
+/* Stock legend styling */
+.stock-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.stock-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-dot.out-of-stock {
+  background-color: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.legend-dot.critical-stock {
+  background-color: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.legend-dot.low-stock {
+  background-color: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 .table-responsive {
@@ -857,6 +926,108 @@ tr:hover td {
   .view-edit-button {
     min-width: 85px; /* Ensure consistent width */
   }
+  
+  /* Inventory table mobile optimizations */
+  table {
+    table-layout: fixed;
+    border: none;
+    box-shadow: none;
+  }
+  
+  th {
+    font-size: 0.9rem;
+  }
+  
+  td {
+    padding: 0.6rem;
+  }
+  
+  .category-mobile-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .mobile-category-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.25rem;
+    margin-top: 0.25rem;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-stock-info {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+  
+  .mobile-stock-badge {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .mobile-stock-badge.out-of-stock {
+    background-color: var(--danger-light);
+    color: var(--danger);
+  }
+  
+  .mobile-stock-badge.critical {
+    background-color: var(--danger-light);
+    color: var(--danger);
+  }
+  
+  .mobile-stock-badge.low {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #f57f17;
+  }
+  
+  .mobile-stock-level {
+    max-width: 70%;
+  }
+  
+  .mobile-view-button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+}
+
+/* Inventory page mobile optimization */
+.inventory-page {
+  padding: 0 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .inventory-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .categories-title {
+    font-size: 1.2rem;
+  }
+  
+  .inventory-table-container {
+    overflow-x: auto;
+    padding: 0.5rem !important;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+  
+  .advanced-filters {
+    margin-bottom: 0.5rem;
+  }
 }
 
 /* Table footer styling */
@@ -945,6 +1116,23 @@ tr:hover td {
 .stock-level-container {
   width: 100%;
   overflow: hidden;
+}
+
+@media (max-width: 992px) {
+  .stock-level-text {
+    display: none !important;
+  }
+  
+  /* Make the progress bar take up more space when text is hidden */
+  .stock-level-container > div {
+    gap: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .stock-level-text {
+    display: none !important;
+  }
 }
 
 /* Column widths */
@@ -1892,7 +2080,7 @@ td:nth-child(5) {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(3px);
+  backdrop-filter: var(--pico-modal-overlay-backdrop-filter, blur(3px));
 }
 
 .modal-backdrop dialog {
@@ -1901,17 +2089,17 @@ td:nth-child(5) {
   border-radius: 12px;
   margin: 0 auto;
   padding: 0;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--pico-box-shadow, 0 10px 25px rgba(0, 0, 0, 0.2));
   animation: modal-appear 0.3s ease-out;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--pico-muted-border-color, var(--border-color));
   overflow: hidden;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-background-color, var(--card-background-color));
 }
 
 .modal-header {
   padding: 1rem 1.5rem;
-  background-color: var(--card-sectionning-background-color, var(--card-background-color));
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--pico-background-color, var(--card-sectionning-background-color));
+  border-bottom: 1px solid var(--pico-muted-border-color, var(--border-color));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1927,8 +2115,8 @@ td:nth-child(5) {
 
 .modal-footer {
   padding: 1rem 1.5rem;
-  background-color: var(--card-sectionning-background-color, var(--card-background-color));
-  border-top: 1px solid var(--border-color);
+  background-color: var(--pico-background-color, var(--card-sectionning-background-color));
+  border-top: 1px solid var(--pico-muted-border-color, var(--border-color));
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -1955,14 +2143,16 @@ label {
 input, select, textarea {
   border-radius: 4px;
   padding: 0.6rem 0.8rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--pico-muted-border-color, var(--border-color));
   width: 100%;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--pico-background-color, var(--background-color));
+  color: var(--pico-color, var(--color));
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+  border-color: var(--pico-primary, var(--primary));
+  box-shadow: 0 0 0 3px var(--pico-primary-focus, rgba(33, 150, 243, 0.15));
   outline: none;
 }
 
