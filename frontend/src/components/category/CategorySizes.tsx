@@ -145,7 +145,8 @@ const CategorySizes = ({ categoryId }: CategorySizesProps) => {
   // Handle dropdown option selection
   const handleSelectChange = (
     newValue: SingleValue<SizeOption> | MultiValue<SizeOption>,
-    actionMeta: ActionMeta<SizeOption>
+    // Including _actionMeta with underscore to indicate it's required by the interface but unused
+    _actionMeta: ActionMeta<SizeOption>
   ) => {
     // Since we're using Single mode, we can safely cast to SingleValue
     const option = newValue as SingleValue<SizeOption>;
