@@ -65,14 +65,11 @@ async function initializeRender() {
       throw err;
     }
     
-    // Only populate with mock data if the database didn't exist before
-    if (!dbExists) {
-      console.log('Populating with mock data...');
-      await execAsync('node scripts/populate-mock-data.js');
-      console.log('Mock data population complete');
-    } else {
-      console.log('Database already exists, skipping mock data population');
-    }
+    // For Render deployment, always refresh data to have proper stock levels
+    // since the free tier doesn't have persistent storage
+    console.log('Setting up data for Render deployment with varied stock levels...');
+    await execAsync('node scripts/render-setup-data.js');
+    console.log('Render data setup complete');
     
     console.log('==== RENDER INITIALIZATION COMPLETE ====');
   } catch (error) {

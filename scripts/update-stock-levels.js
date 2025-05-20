@@ -76,15 +76,16 @@ async function updateStockLevels() {
     
     // Create varied stock levels
     for (const category of categories) {
-      // Set threshold between 5-15
-      const threshold = Math.floor(Math.random() * 11) + 5;
+      // Set consistent threshold of 15 for all categories to make testing easier
+      const threshold = 15;
       
-      // Generate a random stock level scenario
-      // 0 = Out of stock
-      // 1 = Critical (below 50% of threshold)
-      // 2 = Low (between 50% and 100% of threshold)
-      // 3 = Good (above threshold)
-      const scenario = Math.floor(Math.random() * 4);
+      // Ensure we have a variety of stock levels by using the category index
+      // to distribute stock levels evenly, ensuring we have examples of each
+      const categoryIndex = categories.indexOf(category);
+      const scenarioCount = 4; // 0, 1, 2, 3
+      
+      // Distribute scenarios evenly across categories
+      const scenario = categoryIndex % scenarioCount;
       
       let totalItems;
       
@@ -92,14 +93,14 @@ async function updateStockLevels() {
         case 0: // Out of stock
           totalItems = 0;
           break;
-        case 1: // Critical
-          totalItems = Math.floor(Math.random() * (threshold * 0.5));
+        case 1: // Critical (below 50% of threshold)
+          totalItems = Math.max(1, Math.floor(threshold * 0.25)); // About 3-4 items
           break;
-        case 2: // Low
-          totalItems = Math.floor(threshold * 0.5) + Math.floor(Math.random() * (threshold * 0.5));
+        case 2: // Low (between 50% and 100% of threshold)
+          totalItems = Math.floor(threshold * 0.75); // About 11 items
           break;
-        case 3: // Good
-          totalItems = threshold + Math.floor(Math.random() * 10);
+        case 3: // Good (above threshold)
+          totalItems = threshold + 5; // 20 items
           break;
       }
       

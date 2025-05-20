@@ -18,6 +18,8 @@
     "render-init": "node scripts/render-init.js",
     "render-build": "npm install && npm run build && NODE_ENV=production RENDER=true node scripts/render-init.js",
     "render-start": "npm start",
+    "update-stock-levels": "node scripts/update-stock-levels.js",
+    "render-setup": "node scripts/render-setup-data.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
