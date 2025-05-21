@@ -72,7 +72,7 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
                   <span className="sidebar-icon">
-                    <Package size={30} />
+                    <Package size={24} />
                   </span> 
                   <span className="sidebar-text">Inventory</span>
                 </Link>
@@ -84,7 +84,7 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
                   <span className="sidebar-icon">
-                    <PlusSquare size={30} />
+                    <PlusSquare size={24} />
                   </span> 
                   <span className="sidebar-text">Add New</span>
                 </Link>
@@ -96,7 +96,7 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
                   <span className="sidebar-icon">
-                    <QrCode size={30} />
+                    <QrCode size={24} />
                   </span> 
                   <span className="sidebar-text">Scan</span>
                 </Link>
@@ -108,7 +108,7 @@ const Sidebar = ({ isMobileOpen = false, onToggleMobile }: SidebarProps) => {
                   onClick={isMobileOpen ? onToggleMobile : undefined}
                 >
                   <span className="sidebar-icon">
-                    <FileSpreadsheet size={30} />
+                    <FileSpreadsheet size={24} />
                   </span> 
                   <span className="sidebar-text">Import/Export</span>
                 </Link>
