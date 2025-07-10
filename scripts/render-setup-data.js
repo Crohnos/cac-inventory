@@ -1,434 +1,541 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import { dbAsync } from '../dist/database/connection.js';
+import { getCurrentTimestamp } from '../dist/database/setup.js';
+import { generateUniqueQrValue } from '../dist/utils/qrCode.js';
 
-// Get current file's directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure necessary directories exist
-const dataDir = path.join(__dirname, '..', 'data');
-const uploadDir = path.join(__dirname, '..', 'uploads');
-
-if (!fs.existsSync(dataDir)) {
-  console.log('Creating data directory...');
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-if (!fs.existsSync(uploadDir)) {
-  console.log('Creating uploads directory...');
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Database file path
-const dbPath = path.join(dataDir, 'database.db');
-console.log(`Using database at path: ${dbPath}`);
-
-// Database connection
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Database connection error:', err.message);
-    process.exit(1);
-  } else {
-    console.log('Connected to the SQLite database');
-  }
-});
-
-// Create a database wrapper with promises
-const dbAsync = {
-  run: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.run(sql, params, function(err) {
-        if (err) reject(err);
-        else resolve(this);
-      });
-    });
-  },
-  get: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.get(sql, params, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-  },
-  all: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      db.all(sql, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-  },
-  close: () => {
-    return new Promise((resolve, reject) => {
-      db.close(err => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-  }
-};
-
-// Helper function to get the current timestamp
-const getCurrentTimestamp = () => {
-  return new Date().toISOString();
-};
-
-// Helper function to generate a unique ID
-const generateUniqueId = () => {
-  return `item-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-};
-
-// Create database schema
-async function createSchema() {
-  console.log('Creating database schema...');
+// All sizes that should be in the system
+const allSizes = [
+  // Baby/Infant sizes
+  "Preemie", "Newborn", "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", 
+  "12-18 Months", "18-24 Months", "24 Months",
   
-  // SQL statements to create tables
-  const createTables = [
-    `CREATE TABLE IF NOT EXISTS ItemCategory (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT,
-      lowStockThreshold INTEGER DEFAULT 10,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    )`,
-    
-    `CREATE TABLE IF NOT EXISTS Size (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    )`,
-    
-    `CREATE TABLE IF NOT EXISTS ItemSize (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      itemCategoryId INTEGER NOT NULL,
-      sizeId INTEGER NOT NULL,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL,
-      FOREIGN KEY (itemCategoryId) REFERENCES ItemCategory (id),
-      FOREIGN KEY (sizeId) REFERENCES Size (id)
-    )`,
-    
-    `CREATE TABLE IF NOT EXISTS ItemDetail (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      itemCategoryId INTEGER NOT NULL,
-      sizeId INTEGER,
-      condition TEXT,
-      location TEXT,
-      qrCodeValue TEXT UNIQUE,
-      receivedDate TEXT,
-      donorInfo TEXT,
-      approxPrice REAL,
-      isActive INTEGER DEFAULT 1,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL,
-      FOREIGN KEY (itemCategoryId) REFERENCES ItemCategory (id),
-      FOREIGN KEY (sizeId) REFERENCES Size (id)
-    )`,
-    
-    `CREATE TABLE IF NOT EXISTS ItemPhoto (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      itemDetailId INTEGER NOT NULL,
-      filePath TEXT NOT NULL,
-      description TEXT,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL,
-      FOREIGN KEY (itemDetailId) REFERENCES ItemDetail (id)
-    )`
-  ];
+  // Toddler sizes
+  "2T", "3T", "4T", "5T",
   
-  // Execute each SQL statement
-  for (const sql of createTables) {
-    await dbAsync.run(sql);
-  }
+  // Youth sizes
+  "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
   
-  console.log('Database schema created successfully.');
-}
-
-// Data for testing
-const categories = [
-  { name: 'Clothing', description: 'All types of clothing items', lowStockThreshold: 15 },
-  { name: 'Toys', description: 'Children\'s toys and games', lowStockThreshold: 15 },
-  { name: 'Books', description: 'Children\'s books and educational materials', lowStockThreshold: 15 },
-  { name: 'Baby Supplies', description: 'Diapers, formula, and other baby necessities', lowStockThreshold: 15 },
-  { name: 'Hygiene Products', description: 'Toothbrushes, soap, shampoo, etc.', lowStockThreshold: 15 },
-  { name: 'School Supplies', description: 'Notebooks, pencils, backpacks, etc.', lowStockThreshold: 15 },
-  { name: 'Shoes', description: 'All types of footwear', lowStockThreshold: 15 },
-  { name: 'Bedding', description: 'Sheets, blankets, pillows, etc.', lowStockThreshold: 15 }
-];
-
-const sizes = [
-  // Clothing sizes
-  { name: 'Newborn' },
-  { name: '0-3 Months' },
-  { name: '3-6 Months' },
-  { name: '6-9 Months' },
-  { name: '9-12 Months' },
-  { name: '12-18 Months' },
-  { name: '18-24 Months' },
-  { name: '2T' },
-  { name: '3T' },
-  { name: '4T' },
-  { name: '5T' },
-  { name: 'Youth S' },
-  { name: 'Youth M' },
-  { name: 'Youth L' },
-  { name: 'Adult S' },
-  { name: 'Adult M' },
-  { name: 'Adult L' },
-  { name: 'Adult XL' },
+  // Adult clothing sizes
+  "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL",
+  
+  // Underwear sizes
+  "2-4", "5-6", "6-8", "7-8", "10-12", "14-16", "18",
+  
+  // Sock sizes
+  "Infant", "6-18", "18-36", "3T-5T", "Adult",
   
   // Shoe sizes
-  { name: 'Toddler 5' },
-  { name: 'Toddler 7' },
-  { name: 'Kids 10' },
-  { name: 'Kids 12' },
-  { name: 'Women 6' },
-  { name: 'Women 8' },
-  { name: 'Men 9' },
-  { name: 'Men 11' },
+  "Toddler 4", "Toddler 5", "Toddler 6", "Toddler 7", "Toddler 8", "Toddler 9", "Toddler 10",
+  "Little Kid 11", "Little Kid 12", "Little Kid 13",
+  "Big Kid 1", "Big Kid 2", "Big Kid 3", "Big Kid 4", "Big Kid 5", "Big Kid 6",
+  "Women 4", "Women 5", "Women 6", "Women 7", "Women 8", "Women 9", "Women 10", "Women 11",
+  "Men 7", "Men 8", "Men 9", "Men 10", "Men 11", "Men 12", "Men 13",
   
-  // Generic sizes
-  { name: 'Small' },
-  { name: 'Medium' },
-  { name: 'Large' },
-  { name: 'One Size' }
+  // Diaper sizes
+  "Size 1", "Size 2", "Size 3", "Size 4", "Size 5", "Size 6", "Size 7",
+  
+  // Pull-up sizes
+  "2T-3T", "3T-4T", "4T-5T", "5T-6T",
+  
+  // Bedding sizes
+  "Crib", "Twin", "Full", "Queen", "King",
+  
+  // General sizes
+  "Small", "Medium", "Large", "One Size",
+  
+  // Special sizes
+  "Baby", "Child", "Youth", "Adult", "Training", "Sports", "Camis",
+  
+  // Women's specific
+  "Women XS", "Women S", "Women M", "Women L", "Women XL"
 ];
 
-const categorySizeMappings = {
-  'Clothing': [
-    'Newborn', '0-3 Months', '3-6 Months', '6-9 Months', '9-12 Months', 
-    '12-18 Months', '18-24 Months', '2T', '3T', '4T', '5T',
-    'Youth S', 'Youth M', 'Youth L', 'Adult S', 'Adult M', 'Adult L', 'Adult XL'
-  ],
-  'Shoes': [
-    'Toddler 5', 'Toddler 7', 'Kids 10', 'Kids 12', 'Women 6', 'Women 8', 'Men 9', 'Men 11'
-  ],
-  'Toys': ['Small', 'Medium', 'Large'],
-  'Books': ['One Size'],
-  'Baby Supplies': ['One Size', 'Small', 'Medium', 'Large'],
-  'Hygiene Products': ['One Size'],
-  'School Supplies': ['One Size'],
-  'Bedding': ['Small', 'Medium', 'Large']
-};
+// All Rainbow Room categories with their details
+const categories = [
+  // Boys Clothing Categories
+  { name: "Boys Pants", description: "Pants for boys from preemie to adult sizes", lowStockThreshold: 15 },
+  { name: "Boys Shorts", description: "Shorts for boys from preemie to adult sizes", lowStockThreshold: 10 },
+  { name: "Boys Long Sleeve Shirts", description: "Long sleeve shirts for boys", lowStockThreshold: 15 },
+  { name: "Boys Short Sleeve Shirts", description: "Short sleeve shirts for boys", lowStockThreshold: 15 },
+  { name: "Boys Summer/Winter Outfits", description: "Complete outfits for boys", lowStockThreshold: 10 },
+  { name: "Boys Pajamas", description: "Pajamas and sleepwear for boys", lowStockThreshold: 10 },
+  { name: "Boys Light Jackets", description: "Light jackets and sweaters for boys", lowStockThreshold: 8 },
+  { name: "Boys Winter Jackets", description: "Heavy winter coats for boys", lowStockThreshold: 5 },
+  { name: "Boys Underwear", description: "Underwear for boys", lowStockThreshold: 20 },
+  { name: "Boys Socks", description: "Socks for boys", lowStockThreshold: 25 },
+  { name: "Boys Undershirts", description: "Undershirts for boys", lowStockThreshold: 15 },
+  { name: "Boys Shoes", description: "Footwear for boys", lowStockThreshold: 10 },
+  { name: "Boys Hats", description: "Hats and caps for boys", lowStockThreshold: 8 },
+  { name: "Boys Gloves", description: "Gloves and mittens for boys", lowStockThreshold: 8 },
+  { name: "Boys Onesies", description: "Onesies for baby boys", lowStockThreshold: 15 },
 
-// Locations
-const locations = ['McKinney', 'Plano'];
+  // Girls Clothing Categories
+  { name: "Girls Pants", description: "Pants for girls from preemie to adult sizes", lowStockThreshold: 15 },
+  { name: "Girls Shorts", description: "Shorts for girls from preemie to adult sizes", lowStockThreshold: 10 },
+  { name: "Girls Long Sleeve Shirts", description: "Long sleeve shirts for girls", lowStockThreshold: 15 },
+  { name: "Girls Short Sleeve Shirts", description: "Short sleeve shirts for girls", lowStockThreshold: 15 },
+  { name: "Girls Summer/Winter Outfits", description: "Complete outfits for girls", lowStockThreshold: 10 },
+  { name: "Girls Pajamas", description: "Pajamas and sleepwear for girls", lowStockThreshold: 10 },
+  { name: "Girls Light Jackets", description: "Light jackets and sweaters for girls", lowStockThreshold: 8 },
+  { name: "Girls Winter Jackets", description: "Heavy winter coats for girls", lowStockThreshold: 5 },
+  { name: "Girls Underwear", description: "Underwear for girls", lowStockThreshold: 20 },
+  { name: "Girls Socks", description: "Socks for girls", lowStockThreshold: 25 },
+  { name: "Girls Bras", description: "Training bras and sports bras for girls", lowStockThreshold: 10 },
+  { name: "Girls Shoes", description: "Footwear for girls", lowStockThreshold: 10 },
+  { name: "Girls Hats", description: "Hats and accessories for girls", lowStockThreshold: 8 },
+  { name: "Girls Gloves", description: "Gloves and mittens for girls", lowStockThreshold: 8 },
+  { name: "Girls Onesies", description: "Onesies for baby girls", lowStockThreshold: 15 },
 
-// Conditions
-const conditions = ['New', 'Gently Used', 'Heavily Used'];
+  // Diapers and Pull-ups
+  { name: "Diapers", description: "Disposable diapers all sizes (Preemie to Size 7)", lowStockThreshold: 30 },
+  { name: "Pull-ups", description: "Training pants and pull-ups (2T-6T)", lowStockThreshold: 20 },
 
-// Sample donors
-const donors = [
-  'Community Drive', 
-  'Local Church', 
-  'Anonymous', 
-  'School Donation', 
-  'Corporate Giving',
-  'Individual Donor'
+  // Toiletries and Hygiene
+  { name: "Shampoo", description: "Shampoo for all ages", lowStockThreshold: 15 },
+  { name: "Conditioner", description: "Hair conditioner", lowStockThreshold: 10 },
+  { name: "Body Wash", description: "Body wash for men, women, and children", lowStockThreshold: 15 },
+  { name: "Deodorant", description: "Deodorant for men and women", lowStockThreshold: 20 },
+  { name: "Razors", description: "Disposable razors for men and women", lowStockThreshold: 15 },
+  { name: "Soap Bars", description: "Bar soap", lowStockThreshold: 20 },
+  { name: "Shaving Cream", description: "Shaving cream and gel", lowStockThreshold: 10 },
+  { name: "Cosmetics", description: "Makeup and beauty products", lowStockThreshold: 10 },
+  { name: "Pads", description: "Feminine hygiene pads all sizes", lowStockThreshold: 25 },
+  { name: "Tampons", description: "Tampons regular and super", lowStockThreshold: 25 },
+  { name: "Feminine Hygiene Wipes", description: "Feminine hygiene wipes", lowStockThreshold: 15 },
+  { name: "Toothbrushes", description: "Toothbrushes for all ages", lowStockThreshold: 30 },
+  { name: "Toothpaste", description: "Toothpaste", lowStockThreshold: 20 },
+  { name: "Hair Brushes", description: "Hair brushes and combs", lowStockThreshold: 15 },
+  { name: "Lice Treatment", description: "Lice shampoo, spray, and kits", lowStockThreshold: 8 },
+  { name: "Lotion", description: "Body lotion and moisturizers", lowStockThreshold: 15 },
+  { name: "Cotton Swabs", description: "Q-tips and cotton swabs", lowStockThreshold: 15 },
+  { name: "Hair Tools", description: "Hair styling tools and accessories", lowStockThreshold: 10 },
+  { name: "African American Hair Products", description: "Specialized hair products including curl cream and hair masks", lowStockThreshold: 12 },
+  { name: "Face Wash", description: "Facial cleansers", lowStockThreshold: 10 },
+  { name: "Nail Care", description: "Nail clippers, files, and care items", lowStockThreshold: 10 },
+  { name: "First Aid", description: "Basic first aid supplies", lowStockThreshold: 10 },
+
+  // Infant Supplies
+  { name: "Baby Shampoo & Wash", description: "Baby shampoo, wash, and 2-in-1 products", lowStockThreshold: 15 },
+  { name: "Baby Care Products", description: "Baby oil, powder, lotion, and diaper rash cream", lowStockThreshold: 20 },
+  { name: "Baby Feeding Supplies", description: "Sippy cups, bottles, nipples, and formula", lowStockThreshold: 20 },
+  { name: "Baby Comfort Items", description: "Pacifiers, teethers, swaddles, and baby blankets", lowStockThreshold: 15 },
+  { name: "Baby Wipes", description: "Baby wipes and diaper changing supplies", lowStockThreshold: 25 },
+
+  // School Supplies
+  { name: "School Backpacks", description: "Backpacks for school", lowStockThreshold: 10 },
+  { name: "School Health Supplies", description: "Hand sanitizer and tissues", lowStockThreshold: 20 },
+  { name: "School Paper Supplies", description: "Notebooks, paper, and writing materials", lowStockThreshold: 25 },
+  { name: "School Writing Tools", description: "Pencils, pens, markers, and art supplies", lowStockThreshold: 30 },
+  { name: "Personal Accessories", description: "Purses, wallets, and personal items", lowStockThreshold: 8 },
+
+  // Household Supplies
+  { name: "Cleaning Supplies", description: "Brooms, mops, brushes, and cleaning agents", lowStockThreshold: 10 },
+  { name: "Bedding", description: "Comforters, sheets, and pillows", lowStockThreshold: 8 },
+  { name: "Towels & Washcloths", description: "Bath towels and washcloths", lowStockThreshold: 15 },
+  { name: "Paper Products", description: "Paper towels and toilet paper", lowStockThreshold: 20 },
+
+  // Emergency Needs
+  { name: "Car Seats", description: "Baby car seats, convertible seats, and booster seats", lowStockThreshold: 3 },
+  { name: "Pack and Play", description: "Portable cribs and play yards", lowStockThreshold: 2 },
+
+  // Toys and Activities
+  { name: "Toys", description: "General toys for all ages", lowStockThreshold: 15 },
+  { name: "Puzzles & Board Games", description: "Educational and entertainment games", lowStockThreshold: 10 },
+  { name: "Electronics", description: "Electronic toys and devices", lowStockThreshold: 5 },
+  { name: "Arts & Crafts", description: "Art supplies and craft materials", lowStockThreshold: 15 },
+  { name: "Sports Equipment", description: "Sports toys and equipment", lowStockThreshold: 8 }
 ];
 
-// Helper function to get a random item from an array
-const getRandomItem = (array) => array[Math.floor(Math.random() * array.length)];
+// Size associations based on the Rainbow Room inventory data
+const categoryToSizes = {
+  // Boys Clothing (all clothing items need clothing sizes)
+  "Boys Pants": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Boys Shorts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Boys Long Sleeve Shirts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Boys Short Sleeve Shirts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Boys Summer/Winter Outfits": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Boys Pajamas": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Boys Light Jackets": [
+    "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Boys Winter Jackets": [
+    "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Boys Underwear": [
+    "2-4", "5-6", "7-8", "10-12", "14-16", "18", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL"
+  ],
+  "Boys Socks": [
+    "Infant", "6-18", "18-36", "3T-5T", "Youth S", "Youth M", "Youth L", "Adult"
+  ],
+  "Boys Undershirts": [
+    "Youth", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Boys Shoes": [
+    "Toddler 4", "Toddler 5", "Toddler 6", "Toddler 7", "Toddler 8", "Toddler 9", "Toddler 10",
+    "Little Kid 11", "Little Kid 12", "Little Kid 13", "Big Kid 1", "Big Kid 2", "Big Kid 3", 
+    "Big Kid 4", "Big Kid 5", "Big Kid 6", "Women 5", "Women 6", "Women 7", "Women 8", "Women 9", 
+    "Women 10", "Women 11", "Men 7", "Men 8", "Men 9", "Men 10", "Men 11", "Men 12", "Men 13"
+  ],
+  "Boys Hats": ["Baby", "Youth", "Adult"],
+  "Boys Gloves": ["Child", "Youth", "Adult"],
+  "Boys Onesies": ["0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "24 Months"],
 
-// Helper function to get a random date within the last year
-const getRandomDate = () => {
-  const now = new Date();
-  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const randomTimestamp = oneYearAgo.getTime() + Math.random() * (now.getTime() - oneYearAgo.getTime());
-  const date = new Date(randomTimestamp);
-  return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  // Girls Clothing (same as boys mostly)
+  "Girls Pants": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Girls Shorts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Girls Long Sleeve Shirts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Girls Short Sleeve Shirts": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL",
+    "Adult XS", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"
+  ],
+  "Girls Summer/Winter Outfits": [
+    "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Girls Pajamas": [
+    "0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Girls Light Jackets": [
+    "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Girls Winter Jackets": [
+    "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "18-24 Months",
+    "2T", "3T", "4T", "5T", "Youth XS", "Youth S", "Youth M", "Youth L", "Youth XL"
+  ],
+  "Girls Underwear": [
+    "2-4", "6-8", "10-12", "14-16", "Women XS", "Women S", "Women M", "Women L", "Women XL"
+  ],
+  "Girls Socks": [
+    "Infant", "6-18", "18-36", "3T-5T", "Youth S", "Youth M", "Youth L", "Adult"
+  ],
+  "Girls Bras": [
+    "Training", "Sports", "Adult", "Camis"
+  ],
+  "Girls Shoes": [
+    "Toddler 4", "Toddler 5", "Toddler 6", "Toddler 7", "Toddler 8", "Toddler 9", "Toddler 10",
+    "Little Kid 11", "Little Kid 12", "Little Kid 13", "Big Kid 1", "Big Kid 2", "Big Kid 3", 
+    "Big Kid 4", "Big Kid 5", "Big Kid 6", "Women 4", "Women 5", "Women 6", "Women 7", "Women 8", 
+    "Women 9", "Women 10", "Women 11"
+  ],
+  "Girls Hats": ["Baby", "Youth", "Adult"],
+  "Girls Gloves": ["Child", "Youth", "Adult"],
+  "Girls Onesies": ["0-3 Months", "3-6 Months", "6-9 Months", "9-12 Months", "12-18 Months", "24 Months"],
+
+  // Diapers and Pull-ups
+  "Diapers": ["Preemie", "Newborn", "Size 1", "Size 2", "Size 3", "Size 4", "Size 5", "Size 6", "Size 7"],
+  "Pull-ups": ["2T-3T", "3T-4T", "4T-5T", "5T-6T"],
+
+  // Books by reading level/age
+  "Arts & Crafts": ["Small", "Medium", "Large"],
+  "Toys": ["Small", "Medium", "Large"],
+  "Sports Equipment": ["Small", "Medium", "Large"],
+
+  // Bedding sizes
+  "Bedding": ["Crib", "Twin", "Full", "Queen", "King"],
+  
+  // Baby and infant supplies (mostly one size)
+  "Baby Wipes": ["One Size"],
+  "Baby Shampoo & Wash": ["One Size"],
+  "Baby Care Products": ["One Size"],
+  "Baby Feeding Supplies": ["One Size"],
+  "Baby Comfort Items": ["One Size"],
+  
+  // Toiletries and hygiene (mostly one size)
+  "Shampoo": ["One Size"],
+  "Conditioner": ["One Size"],
+  "Body Wash": ["One Size"],
+  "Deodorant": ["One Size"],
+  "Razors": ["One Size"],
+  "Soap Bars": ["One Size"],
+  "Shaving Cream": ["One Size"],
+  "Cosmetics": ["One Size"],
+  "Pads": ["One Size"],
+  "Tampons": ["One Size"],
+  "Feminine Hygiene Wipes": ["One Size"],
+  "Toothbrushes": ["One Size"],
+  "Toothpaste": ["One Size"],
+  "Hair Brushes": ["One Size"],
+  "Lice Treatment": ["One Size"],
+  "Lotion": ["One Size"],
+  "Cotton Swabs": ["One Size"],
+  "Hair Tools": ["One Size"],
+  "African American Hair Products": ["One Size"],
+  "Face Wash": ["One Size"],
+  "Nail Care": ["One Size"],
+  "First Aid": ["One Size"],
+  
+  // School supplies
+  "School Backpacks": ["One Size"],
+  "School Health Supplies": ["One Size"],
+  "School Paper Supplies": ["One Size"],
+  "School Writing Tools": ["One Size"],
+  "Personal Accessories": ["One Size"],
+  
+  // Household supplies
+  "Cleaning Supplies": ["One Size"],
+  "Towels & Washcloths": ["One Size"],
+  "Paper Products": ["One Size"],
+  
+  // Emergency needs
+  "Car Seats": ["One Size"],
+  "Pack and Play": ["One Size"],
+  
+  // Entertainment
+  "Puzzles & Board Games": ["One Size"],
+  "Electronics": ["One Size"]
 };
 
-// Helper function to generate a random price
-const getRandomPrice = (min, max) => {
-  return parseFloat((Math.random() * (max - min) + min).toFixed(2));
-};
+// Sample items for demonstration
+const sampleItems = [
+  // Boys clothing samples
+  { categoryName: "Boys Pants", sizeName: "2T", condition: "New", location: "McKinney", donorInfo: "Local family", approxPrice: 12.99 },
+  { categoryName: "Boys Pants", sizeName: "4T", condition: "Gently Used", location: "Plano", donorInfo: "Community donation", approxPrice: 8.50 },
+  { categoryName: "Boys Pants", sizeName: "Youth M", condition: "New", location: "McKinney", donorInfo: "Target donation", approxPrice: 15.99 },
+  
+  { categoryName: "Boys Short Sleeve Shirts", sizeName: "3T", condition: "New", location: "McKinney", donorInfo: "Walmart donation", approxPrice: 6.99 },
+  { categoryName: "Boys Short Sleeve Shirts", sizeName: "Youth L", condition: "Gently Used", location: "Plano", donorInfo: "Parent donation", approxPrice: 4.50 },
+  
+  { categoryName: "Boys Shoes", sizeName: "Toddler 6", condition: "Gently Used", location: "McKinney", donorInfo: "Local family", approxPrice: 18.99 },
+  { categoryName: "Boys Shoes", sizeName: "Big Kid 2", condition: "New", location: "Plano", donorInfo: "Nike donation", approxPrice: 45.00 },
+  
+  // Girls clothing samples
+  { categoryName: "Girls Pants", sizeName: "18-24 Months", condition: "New", location: "McKinney", donorInfo: "Carter's donation", approxPrice: 14.99 },
+  { categoryName: "Girls Pants", sizeName: "5T", condition: "Gently Used", location: "Plano", donorInfo: "Community drive", approxPrice: 7.50 },
+  
+  { categoryName: "Girls Long Sleeve Shirts", sizeName: "2T", condition: "New", location: "McKinney", donorInfo: "Local business", approxPrice: 9.99 },
+  { categoryName: "Girls Long Sleeve Shirts", sizeName: "Youth S", condition: "Gently Used", location: "Plano", donorInfo: "Family donation", approxPrice: 5.99 },
+  
+  { categoryName: "Girls Shoes", sizeName: "Toddler 8", condition: "New", location: "McKinney", donorInfo: "Stride Rite donation", approxPrice: 32.99 },
+  { categoryName: "Girls Shoes", sizeName: "Women 6", condition: "Gently Used", location: "Plano", donorInfo: "Teen donation", approxPrice: 22.50 },
+  
+  // Baby supplies
+  { categoryName: "Diapers", sizeName: "Size 2", condition: "New", location: "McKinney", donorInfo: "Huggies donation", approxPrice: 24.99 },
+  { categoryName: "Diapers", sizeName: "Size 4", condition: "New", location: "Plano", donorInfo: "Pampers donation", approxPrice: 26.99 },
+  { categoryName: "Diapers", sizeName: "Newborn", condition: "New", location: "McKinney", donorInfo: "Hospital donation", approxPrice: 22.99 },
+  
+  { categoryName: "Baby Wipes", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Costco donation", approxPrice: 19.99 },
+  { categoryName: "Baby Wipes", sizeName: "One Size", condition: "New", location: "Plano", donorInfo: "Sam's Club donation", approxPrice: 18.99 },
+  
+  { categoryName: "Baby Care Products", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Johnson & Johnson", approxPrice: 8.99 },
+  
+  // Toiletries
+  { categoryName: "Shampoo", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "P&G donation", approxPrice: 4.99 },
+  { categoryName: "Shampoo", sizeName: "One Size", condition: "New", location: "Plano", donorInfo: "Local pharmacy", approxPrice: 6.50 },
+  
+  { categoryName: "Toothbrushes", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Dentist office", approxPrice: 2.99 },
+  { categoryName: "Toothbrushes", sizeName: "One Size", condition: "New", location: "Plano", donorInfo: "Oral-B donation", approxPrice: 3.50 },
+  
+  { categoryName: "Body Wash", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Dove donation", approxPrice: 5.99 },
+  
+  // School supplies
+  { categoryName: "School Backpacks", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Back-to-school drive", approxPrice: 25.99 },
+  { categoryName: "School Backpacks", sizeName: "One Size", condition: "Gently Used", location: "Plano", donorInfo: "Parent donation", approxPrice: 12.00 },
+  
+  { categoryName: "School Writing Tools", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Crayola donation", approxPrice: 8.99 },
+  { categoryName: "School Paper Supplies", sizeName: "One Size", condition: "New", location: "Plano", donorInfo: "Office depot", approxPrice: 15.50 },
+  
+  // Toys and entertainment
+  { categoryName: "Toys", sizeName: "Small", condition: "Gently Used", location: "McKinney", donorInfo: "Family donation", approxPrice: 12.99 },
+  { categoryName: "Toys", sizeName: "Medium", condition: "New", location: "Plano", donorInfo: "Mattel donation", approxPrice: 19.99 },
+  { categoryName: "Toys", sizeName: "Large", condition: "Gently Used", location: "McKinney", donorInfo: "Community drive", approxPrice: 35.00 },
+  
+  { categoryName: "Puzzles & Board Games", sizeName: "One Size", condition: "New", location: "Plano", donorInfo: "Hasbro donation", approxPrice: 14.99 },
+  { categoryName: "Arts & Crafts", sizeName: "Medium", condition: "New", location: "McKinney", donorInfo: "Michaels donation", approxPrice: 22.50 },
+  
+  // Bedding
+  { categoryName: "Bedding", sizeName: "Twin", condition: "New", location: "McKinney", donorInfo: "Target donation", approxPrice: 39.99 },
+  { categoryName: "Bedding", sizeName: "Crib", condition: "Gently Used", location: "Plano", donorInfo: "Parent donation", approxPrice: 25.00 },
+  
+  // Emergency items
+  { categoryName: "Car Seats", sizeName: "One Size", condition: "New", location: "McKinney", donorInfo: "Graco donation", approxPrice: 89.99 },
+  { categoryName: "Pack and Play", sizeName: "One Size", condition: "Gently Used", location: "Plano", donorInfo: "Family donation", approxPrice: 65.00 }
+];
 
-// Main function to populate the database
-async function populateDatabase() {
+async function setupRenderData() {
   try {
-    console.log('Starting database setup for Render deployment...');
+    console.log('🚀 Starting Render data setup...');
+    const timestamp = getCurrentTimestamp();
     
-    // Create schema
-    await createSchema();
-    
-    // Insert categories
-    console.log('Inserting item categories...');
-    const categoryIds = {};
-    for (const category of categories) {
-      const timestamp = getCurrentTimestamp();
-      try {
-        const result = await dbAsync.run(
-          'INSERT INTO ItemCategory (name, description, lowStockThreshold, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-          [category.name, category.description, category.lowStockThreshold, timestamp, timestamp]
-        );
-        categoryIds[category.name] = result.lastID;
-        console.log(`Added category: ${category.name} (ID: ${result.lastID})`);
-      } catch (err) {
-        console.error(`Error inserting category ${category.name}:`, err.message);
-      }
-    }
-    
-    // Insert sizes
-    console.log('Inserting sizes...');
-    const sizeIds = {};
-    for (const size of sizes) {
-      const timestamp = getCurrentTimestamp();
+    // Create all sizes first
+    console.log('📏 Creating sizes...');
+    const sizeMap = {};
+    for (const sizeName of allSizes) {
       try {
         const result = await dbAsync.run(
           'INSERT INTO Size (name, createdAt, updatedAt) VALUES (?, ?, ?)',
-          [size.name, timestamp, timestamp]
+          [sizeName, timestamp, timestamp]
         );
-        sizeIds[size.name] = result.lastID;
-        console.log(`Added size: ${size.name} (ID: ${result.lastID})`);
-      } catch (err) {
-        console.error(`Error inserting size ${size.name}:`, err.message);
-      }
-    }
-    
-    // Create category-size associations
-    console.log('Creating category-size associations...');
-    for (const categoryName in categorySizeMappings) {
-      const categoryId = categoryIds[categoryName];
-      if (!categoryId) continue;
-      
-      for (const sizeName of categorySizeMappings[categoryName]) {
-        const sizeId = sizeIds[sizeName];
-        if (!sizeId) continue;
-        
-        const timestamp = getCurrentTimestamp();
-        try {
-          await dbAsync.run(
-            'INSERT INTO ItemSize (itemCategoryId, sizeId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-            [categoryId, sizeId, timestamp, timestamp]
-          );
-          console.log(`Associated category "${categoryName}" with size "${sizeName}"`);
-        } catch (err) {
-          console.error(`Error associating category ${categoryName} with size ${sizeName}:`, err.message);
+        sizeMap[sizeName] = result.lastID;
+        console.log(`  ✅ Created size: ${sizeName}`);
+      } catch (error) {
+        if (error.message.includes('UNIQUE constraint failed')) {
+          // Size already exists, get its ID
+          const existing = await dbAsync.get('SELECT id FROM Size WHERE name = ?', [sizeName]);
+          sizeMap[sizeName] = existing.id;
+          console.log(`  ✓ Size already exists: ${sizeName}`);
+        } else {
+          throw error;
         }
       }
     }
     
-    // Create stock levels with different variations
-    console.log('Creating items with varied stock levels...');
+    // Create all categories with QR codes
+    console.log('\n🏷️  Creating categories...');
+    const categoryMap = {};
+    for (const category of categories) {
+      try {
+        const qrCodeValue = await generateUniqueQrValue();
+        const result = await dbAsync.run(
+          'INSERT INTO ItemCategory (name, description, lowStockThreshold, qrCodeValue, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+          [category.name, category.description, category.lowStockThreshold, qrCodeValue, timestamp, timestamp]
+        );
+        categoryMap[category.name] = result.lastID;
+        console.log(`  ✅ Created category: ${category.name}`);
+      } catch (error) {
+        if (error.message.includes('UNIQUE constraint failed')) {
+          // Category already exists, get its ID
+          const existing = await dbAsync.get('SELECT id FROM ItemCategory WHERE name = ?', [category.name]);
+          categoryMap[category.name] = existing.id;
+          console.log(`  ✓ Category already exists: ${category.name}`);
+        } else {
+          throw error;
+        }
+      }
+    }
     
-    for (const categoryName in categoryIds) {
-      const categoryId = categoryIds[categoryName];
-      // Use category index to determine stock scenario
-      const scenario = categories.findIndex(c => c.name === categoryName) % 4;
-      const threshold = 15; // Standard threshold for all
-      
-      let totalItems;
-      
-      switch (scenario) {
-        case 0: // Out of stock
-          totalItems = 0;
-          break;
-        case 1: // Critical (below 50% of threshold)
-          totalItems = Math.max(1, Math.floor(threshold * 0.25)); // About 3-4 items
-          break;
-        case 2: // Low (between 50% and 100% of threshold)
-          totalItems = Math.floor(threshold * 0.75); // About 11 items
-          break;
-        case 3: // Good (above threshold)
-          totalItems = threshold + 5; // 20 items
-          break;
+    // Create size associations
+    console.log('\n🔗 Creating size associations...');
+    let associationCount = 0;
+    for (const [categoryName, sizeNames] of Object.entries(categoryToSizes)) {
+      const categoryId = categoryMap[categoryName];
+      if (!categoryId) {
+        console.log(`  ⚠️  Category "${categoryName}" not found, skipping...`);
+        continue;
       }
       
-      console.log(`Creating ${totalItems} items for category "${categoryName}" (scenario: ${scenario})`);
-      
-      // Get applicable sizes for this category
-      const applicableSizes = categorySizeMappings[categoryName] || [];
-      
-      // Add items
-      for (let i = 0; i < totalItems; i++) {
-        const timestamp = getCurrentTimestamp();
-        const qrCodeValue = generateUniqueId();
-        const receivedDate = getRandomDate();
-        const condition = getRandomItem(conditions);
-        const location = getRandomItem(locations);
-        const donorInfo = getRandomItem(donors);
-        const approxPrice = Math.random() > 0.3 ? getRandomPrice(5, 50) : null;
-        
-        // Choose a random size if applicable
-        let sizeId = null;
-        if (applicableSizes.length > 0) {
-          const sizeName = getRandomItem(applicableSizes);
-          sizeId = sizeIds[sizeName];
+      for (const sizeName of sizeNames) {
+        const sizeId = sizeMap[sizeName];
+        if (!sizeId) {
+          console.log(`  ⚠️  Size "${sizeName}" not found, skipping...`);
+          continue;
         }
         
         try {
-          const result = await dbAsync.run(
-            `INSERT INTO ItemDetail (
-              itemCategoryId, sizeId, condition, location, qrCodeValue, 
-              receivedDate, donorInfo, approxPrice, isActive, createdAt, updatedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-            [
-              categoryId,
-              sizeId,
-              condition,
-              location,
-              qrCodeValue,
-              receivedDate,
-              donorInfo,
-              approxPrice,
-              timestamp,
-              timestamp
-            ]
+          // Check if association already exists
+          const existing = await dbAsync.get(
+            'SELECT id FROM ItemSize WHERE itemCategoryId = ? AND sizeId = ?',
+            [categoryId, sizeId]
           );
           
-          console.log(`Added item for category "${categoryName}"`);
-          
-          // Add a simple placeholder photo for a few items
-          if (i % 3 === 0) {
-            const photoTimestamp = getCurrentTimestamp();
-            const photoFileName = `item-${result.lastID}-photo.png`;
-            const photoPath = path.join(uploadDir, photoFileName);
-            
-            // Create a simple colored placeholder (1x1 pixel PNG)
-            const buffer = Buffer.from([
-              0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 
-              0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 
-              0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 
-              0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 
-              0x00, 0x03, 0x01, 0x01, 0x00, 0x18, 0xDD, 0x8D, 0xB0, 0x00, 0x00, 0x00, 
-              0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
-            ]);
-            fs.writeFileSync(photoPath, buffer);
-            
+          if (!existing) {
             await dbAsync.run(
-              'INSERT INTO ItemPhoto (itemDetailId, filePath, description, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-              [
-                result.lastID,
-                `uploads/${photoFileName}`,
-                `Photo for ${categoryName}`,
-                photoTimestamp,
-                photoTimestamp
-              ]
+              'INSERT INTO ItemSize (itemCategoryId, sizeId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+              [categoryId, sizeId, timestamp, timestamp]
             );
+            associationCount++;
           }
-        } catch (err) {
-          console.error(`Error creating item:`, err.message);
+        } catch (error) {
+          console.log(`  ❌ Failed to associate "${categoryName}" with "${sizeName}": ${error.message}`);
         }
+      }
+      console.log(`  ✅ Associated sizes for: ${categoryName}`);
+    }
+    
+    // Create sample items
+    console.log('\n📦 Creating sample items...');
+    let itemCount = 0;
+    for (const item of sampleItems) {
+      const categoryId = categoryMap[item.categoryName];
+      const sizeId = sizeMap[item.sizeName];
+      
+      if (!categoryId || !sizeId) {
+        console.log(`  ⚠️  Skipping item: missing category or size for ${item.categoryName} - ${item.sizeName}`);
+        continue;
+      }
+      
+      try {
+        await dbAsync.run(
+          `INSERT INTO ItemDetail (
+            itemCategoryId, sizeId, condition, location, receivedDate, 
+            donorInfo, approxPrice, isActive, createdAt, updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          [
+            categoryId,
+            sizeId,
+            item.condition,
+            item.location,
+            new Date().toISOString().split('T')[0], // today's date
+            item.donorInfo,
+            item.approxPrice,
+            timestamp,
+            timestamp
+          ]
+        );
+        itemCount++;
+        console.log(`  ✅ Created item: ${item.categoryName} (${item.sizeName}) - ${item.condition}`);
+      } catch (error) {
+        console.log(`  ❌ Failed to create item: ${error.message}`);
       }
     }
     
-    console.log('Database setup completed successfully!');
-    console.log(`Added ${Object.keys(categoryIds).length} categories`);
-    console.log(`Added ${Object.keys(sizeIds).length} sizes`);
+    console.log('\n🎉 Render data setup complete!');
+    console.log(`📊 Summary:`);
+    console.log(`  • Sizes: ${Object.keys(sizeMap).length}`);
+    console.log(`  • Categories: ${Object.keys(categoryMap).length}`);
+    console.log(`  • Size associations: ${associationCount}`);
+    console.log(`  • Sample items: ${itemCount}`);
     
-  } catch (err) {
-    console.error('Error setting up database:', err);
-  } finally {
-    await dbAsync.close();
-    console.log('Database connection closed');
+  } catch (error) {
+    console.error('❌ Error setting up Render data:', error);
+    throw error;
   }
 }
 
-// Run the setup script
-populateDatabase().catch(console.error);
+// Run the setup
+setupRenderData()
+  .then(() => {
+    console.log('\n✅ Render data setup completed successfully!');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('\n❌ Failed to setup Render data:', error);
+    process.exit(1);
+  });

@@ -17,7 +17,7 @@
     "build:frontend": "cd frontend && npm run build",
     "build:all": "npm run build && npm run build:frontend",
     "render-init": "node scripts/render-init.js",
-    "render-build": "npm install && npm run build && NODE_ENV=production RENDER=true node scripts/render-init.js",
+    "render-build": "npm install && npm run build && NODE_ENV=production RENDER=true node scripts/render-init.js && npm run render-setup",
     "render-start": "npm start",
     "update-stock-levels": "node scripts/update-stock-levels.js",
     "render-setup": "node scripts/render-setup-data.js",
