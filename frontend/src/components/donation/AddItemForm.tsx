@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import { useCategories, useCategorySizes, useCreateDetail, useToastContext } from '../../hooks'
 import LoadingSpinner from '../common/LoadingSpinner'
 import ErrorDisplay from '../common/ErrorDisplay'
-import ItemQrCode from '../item/ItemQrCode'
 
 interface AddItemFormProps {
   initialCategoryId?: number
@@ -12,8 +11,6 @@ interface AddItemFormProps {
 
 interface NewItem {
   id?: number
-  qrCodeValue?: string
-  qrCodeDataUrl?: string
 }
 
 const AddItemForm = ({ initialCategoryId, onSuccess }: AddItemFormProps) => {
@@ -76,9 +73,7 @@ const AddItemForm = ({ initialCategoryId, onSuccess }: AddItemFormProps) => {
       
       // Save the new item info for display
       setNewItem({
-        id: result.id,
-        qrCodeValue: result.qrCodeValue,
-        qrCodeDataUrl: result.qrCodeDataUrl
+        id: result.id
       })
       
       // Reset form if adding another
@@ -119,21 +114,12 @@ const AddItemForm = ({ initialCategoryId, onSuccess }: AddItemFormProps) => {
     return <ErrorDisplay error={categoriesError as Error} />
   }
   
-  // If a new item was just created, show the QR code and options
+  // If a new item was just created, show success options
   if (newItem) {
     return (
       <div>
         <div className="card">
           <h3 className="text-center">Item Added Successfully!</h3>
-          
-          {newItem.qrCodeValue && (
-            <div className="mt-1">
-              <ItemQrCode 
-                qrCodeValue={newItem.qrCodeValue}
-                qrCodeDataUrl={newItem.qrCodeDataUrl}
-              />
-            </div>
-          )}
           
           <div className="flex gap-1 justify-between mt-1">
             <div>

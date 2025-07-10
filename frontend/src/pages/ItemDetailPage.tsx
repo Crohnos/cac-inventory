@@ -5,7 +5,6 @@ import { useDetail, useToastContext } from '../hooks'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorDisplay from '../components/common/ErrorDisplay'
 import ItemHeader from '../components/item/ItemHeader'
-import ItemQrCode from '../components/item/ItemQrCode'
 import ItemPhotos from '../components/item/ItemPhotos'
 import ItemActions from '../components/item/ItemActions'
 
@@ -42,7 +41,7 @@ const ItemDetailPage = () => {
       <h1>Item Details</h1>
       
       <div className="item-detail-grid">
-        {/* Left column: Item details and actions */}
+        {/* Item details and actions */}
         <div className="item-info-column">
           {/* Item Header */}
           <ItemHeader 
@@ -54,14 +53,6 @@ const ItemDetailPage = () => {
           <ItemActions 
             item={item!} 
             onRefresh={refetch} 
-          />
-        </div>
-        
-        {/* Right column: QR Code prominently displayed */}
-        <div className="qr-code-column">
-          <ItemQrCode 
-            qrCodeValue={item!.qrCodeValue} 
-            qrCodeDataUrl={item!.qrCodeDataUrl} 
           />
         </div>
       </div>
