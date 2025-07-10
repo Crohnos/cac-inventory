@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ItemCategory } from '../../types/apiTypes'
 import { useUpdateCategory } from '../../hooks/useCategories'
 import { useToastContext } from '../../hooks'
+import ItemQrCode from '../item/ItemQrCode'
 
 interface CategoryHeaderProps {
   category: ItemCategory
@@ -153,6 +154,16 @@ const CategoryHeader = ({ category, onRefresh }: CategoryHeaderProps) => {
           </div>
         </div>
       </dl>
+      
+      {/* QR Code Section */}
+      {category.qrCodeValue && (
+        <div style={{ marginTop: '20px' }}>
+          <ItemQrCode 
+            qrCodeValue={category.qrCodeValue} 
+            qrCodeDataUrl={category.qrCodeDataUrl}
+          />
+        </div>
+      )}
     </div>
   )
 }

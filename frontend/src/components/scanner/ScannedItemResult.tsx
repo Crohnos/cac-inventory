@@ -119,7 +119,7 @@ const ScannedItemResult = ({ item, onActionComplete }: ScannedItemResultProps) =
   return (
     <div className="card" style={{ borderRadius: '12px' }}>
       <div style={{
-        backgroundColor: 'var(--primary-light, #e3f2fd)',
+        backgroundColor: 'var(--primary-light)',
         padding: '12px',
         marginBottom: '15px',
         borderRadius: '8px',
@@ -131,7 +131,7 @@ const ScannedItemResult = ({ item, onActionComplete }: ScannedItemResultProps) =
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          color: 'var(--primary, #2196f3)',
+          color: 'var(--primary)',
           marginBottom: '5px'
         }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -155,7 +155,7 @@ const ScannedItemResult = ({ item, onActionComplete }: ScannedItemResultProps) =
           fontSize: '0.9rem',
           fontWeight: 'bold'
         }}>
-          <span style={{ color: 'var(--primary, #2196f3)' }}>{item.categoryName}</span>
+          <span style={{ color: 'var(--primary)' }}>{item.categoryName}</span>
           {item.sizeName && <span>• {item.sizeName}</span>}
         </div>
       </div>
@@ -219,8 +219,8 @@ const ScannedItemResult = ({ item, onActionComplete }: ScannedItemResultProps) =
                 alignItems: 'center',
                 gap: '5px',
                 padding: '3px 8px',
-                backgroundColor: 'var(--primary-light, #e3f2fd)',
-                color: 'var(--primary, #2196f3)',
+                backgroundColor: 'var(--primary-light)',
+                color: 'var(--primary)',
                 borderRadius: '4px',
                 fontSize: '0.9rem'
               }}>
@@ -364,7 +364,7 @@ const ScannedItemResult = ({ item, onActionComplete }: ScannedItemResultProps) =
           backgroundColor: 'var(--card-sectionning-background-color, var(--card-background-color))',
           padding: '15px',
           borderRadius: '8px',
-          borderLeft: '3px solid var(--primary, #2196f3)'
+          borderLeft: '3px solid var(--primary)'
         }}>
           <div style={{ marginBottom: '10px' }}>
             <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Transfer Item to New Location</h4>

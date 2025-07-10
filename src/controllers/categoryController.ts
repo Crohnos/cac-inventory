@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { dbAsync } from '../database/connection.js';
 import { getCurrentTimestamp } from '../database/setup.js';
 import { NotFoundError } from '../utils/errors.js';
+import { generateUniqueQrValue, generateQrCodeDataUrl } from '../utils/qrCode.js';
 import { 
   ItemCategoryInput, 
   ItemCategoryUpdateInput, 
@@ -50,14 +51,24 @@ export const createCategory = async (
     const { name, description, lowStockThreshold }: ItemCategoryInput = req.body;
     const timestamp = getCurrentTimestamp();
     
+    // Generate a unique QR code value for this category
+    const qrCodeValue = await generateUniqueQrValue();
+    
     const result = await dbAsync.run(
-      'INSERT INTO ItemCategory (name, description, lowStockThreshold, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-      [name, description || null, lowStockThreshold, timestamp, timestamp]
+      'INSERT INTO ItemCategory (name, description, lowStockThreshold, qrCodeValue, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, description || null, lowStockThreshold, qrCodeValue, timestamp, timestamp]
     );
     
     // Get the created category
     const category = await dbAsync.get('SELECT * FROM ItemCategory WHERE id = ?', [result.lastID]);
-    res.status(201).json(category);
+    
+    // Generate QR code data URL
+    const qrCodeDataUrl = await generateQrCodeDataUrl(qrCodeValue);
+    
+    res.status(201).json({
+      ...category,
+      qrCodeDataUrl
+    });
   } catch (error) {
     // Check for SQLITE_CONSTRAINT error (unique constraint violation)
     const sqliteError = error as any;
@@ -97,7 +108,57 @@ export const getCategoryById = async (
       throw new NotFoundError(`Category with ID ${id} not found`);
     }
     
-    res.json(category);
+    // Generate QR code data URL if QR code exists
+    let qrCodeDataUrl;
+    if (category.qrCodeValue) {
+      qrCodeDataUrl = await generateQrCodeDataUrl(category.qrCodeValue);
+    }
+    
+    res.json({
+      ...category,
+      qrCodeDataUrl
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get a category by QR code value
+ */
+export const getCategoryByQrCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { qrCodeValue } = req.params;
+    
+    const category = await dbAsync.get(`
+      SELECT 
+        c.*,
+        COALESCE(
+          (SELECT COUNT(*) FROM ItemDetail WHERE itemCategoryId = c.id AND isActive = 1),
+          0
+        ) as totalQuantity
+      FROM ItemCategory c
+      WHERE c.qrCodeValue = ?
+    `, [qrCodeValue]);
+    
+    if (!category) {
+      return res.status(404).json({
+        error: 'Category not found',
+        details: `No category with QR code ${qrCodeValue} exists`
+      });
+    }
+    
+    // Generate QR code data URL
+    const qrCodeDataUrl = await generateQrCodeDataUrl(qrCodeValue);
+    
+    res.json({
+      ...category,
+      qrCodeDataUrl
+    });
   } catch (error) {
     next(error);
   }
@@ -161,7 +222,16 @@ export const updateCategory = async (
       WHERE c.id = ?
     `, [id]);
     
-    res.json(updatedCategory);
+    // Generate QR code data URL if QR code exists
+    let qrCodeDataUrl;
+    if (updatedCategory.qrCodeValue) {
+      qrCodeDataUrl = await generateQrCodeDataUrl(updatedCategory.qrCodeValue);
+    }
+    
+    res.json({
+      ...updatedCategory,
+      qrCodeDataUrl
+    });
   } catch (error) {
     // Check for SQLITE_CONSTRAINT error (unique constraint violation)
     const sqliteError = error as any;

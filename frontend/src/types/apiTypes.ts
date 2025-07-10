@@ -16,6 +16,8 @@ export interface ItemCategory {
   name: string
   description: string | null
   lowStockThreshold: number
+  qrCodeValue?: string
+  qrCodeDataUrl?: string
   totalQuantity?: number
   createdAt: string
   updatedAt: string
@@ -44,8 +46,6 @@ export interface ItemDetail {
   sizeId: number | null
   condition: 'New' | 'Gently Used' | 'Heavily Used'
   location: 'McKinney' | 'Plano'
-  qrCodeValue: string
-  qrCodeDataUrl?: string
   receivedDate: string
   donorInfo: string | null
   approxPrice: number | null

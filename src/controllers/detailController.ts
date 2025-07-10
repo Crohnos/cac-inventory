@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { dbAsync } from '../database/connection.js';
 import { getCurrentTimestamp } from '../database/setup.js';
 import { NotFoundError } from '../utils/errors.js';
-import { generateUniqueQrValue, generateQrCodeDataUrl } from '../utils/qrCode.js';
 import { 
   ItemDetailInput, 
   ItemDetailUpdateInput,
@@ -119,22 +118,19 @@ export const createDetail = async (
       }
     }
     
-    // Generate a unique QR code value
-    const qrCodeValue = await generateUniqueQrValue();
     const timestamp = getCurrentTimestamp();
     
     // Insert into database
     const result = await dbAsync.run(
       `INSERT INTO ItemDetail (
-        itemCategoryId, sizeId, condition, location, qrCodeValue, 
+        itemCategoryId, sizeId, condition, location, 
         receivedDate, donorInfo, approxPrice, isActive, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         itemCategoryId,
         sizeId || null,
         condition,
         location,
-        qrCodeValue,
         receivedDate,
         donorInfo || null,
         approxPrice || null,
@@ -156,14 +152,7 @@ export const createDetail = async (
       WHERE d.id = ?
     `, [result.lastID]);
     
-    // Generate a QR code data URL
-    const qrCodeDataUrl = await generateQrCodeDataUrl(qrCodeValue);
-    
-    // Return the item with its QR code
-    res.status(201).json({
-      ...createdItem,
-      qrCodeDataUrl
-    });
+    res.status(201).json(createdItem);
   } catch (error) {
     next(error);
   }
@@ -195,58 +184,12 @@ export const getDetailById = async (
       throw new NotFoundError(`Item detail with ID ${id} not found`);
     }
     
-    // Generate QR code data URL
-    const qrCodeDataUrl = await generateQrCodeDataUrl(detail.qrCodeValue);
-    
-    res.json({
-      ...detail,
-      qrCodeDataUrl
-    });
+    res.json(detail);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Get an item detail by QR code value
- */
-export const getDetailByQrCode = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { qrCodeValue } = req.params;
-    
-    const detail = await dbAsync.get(`
-      SELECT 
-        d.*,
-        c.name as categoryName,
-        s.name as sizeName
-      FROM ItemDetail d
-      LEFT JOIN ItemCategory c ON d.itemCategoryId = c.id
-      LEFT JOIN Size s ON d.sizeId = s.id
-      WHERE d.qrCodeValue = ?
-    `, [qrCodeValue]);
-    
-    if (!detail) {
-      return res.status(404).json({
-        error: 'Item not found',
-        details: `No item with QR code ${qrCodeValue} exists`
-      });
-    }
-    
-    // Generate QR code data URL
-    const qrCodeDataUrl = await generateQrCodeDataUrl(qrCodeValue);
-    
-    res.json({
-      ...detail,
-      qrCodeDataUrl
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 /**
  * Update an item detail
@@ -384,13 +327,7 @@ export const updateDetail = async (
       WHERE d.id = ?
     `, [id]);
     
-    // Generate QR code data URL
-    const qrCodeDataUrl = await generateQrCodeDataUrl(updatedItem.qrCodeValue);
-    
-    res.json({
-      ...updatedItem,
-      qrCodeDataUrl
-    });
+    res.json(updatedItem);
   } catch (error) {
     next(error);
   }

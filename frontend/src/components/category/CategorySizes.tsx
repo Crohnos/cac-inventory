@@ -68,6 +68,7 @@ const CategorySizes = ({ categoryId }: CategorySizesProps) => {
     refetch: refetchCategorySizes 
   } = useCategorySizes(categoryId)
   
+  
   // Fetch all available sizes
   const { 
     data: allSizes = [], 
@@ -242,6 +243,7 @@ const CategorySizes = ({ categoryId }: CategorySizesProps) => {
   return (
     <div className="card">
       <h3>Associated Sizes</h3>
+      
       
       {/* One Size Checkbox */}
       <div className="one-size-option mb-1">

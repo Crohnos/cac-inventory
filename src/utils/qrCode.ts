@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { dbAsync } from '../database/connection.js';
 
 /**
- * Generate a unique QR code value
+ * Generate a unique QR code value for categories
  * @returns A string that can be used as a unique QR code value
  */
 export const generateUniqueQrValue = async (): Promise<string> => {
@@ -13,11 +13,11 @@ export const generateUniqueQrValue = async (): Promise<string> => {
   // Generate QR values until we get a unique one
   while (!isUnique) {
     // Generate a UUID as the base for our QR code value
-    qrCodeValue = `item-${uuidv4()}`;
+    qrCodeValue = `category-${uuidv4()}`;
     
     // Check if this QR code value already exists in the database
     const existing = await dbAsync.get(
-      'SELECT id FROM ItemDetail WHERE qrCodeValue = ?', 
+      'SELECT id FROM ItemCategory WHERE qrCodeValue = ?', 
       [qrCodeValue]
     );
     

@@ -29,7 +29,6 @@ export const ItemTransferSchema = z.object({
 // Types for ItemDetail
 export type ItemDetail = z.infer<typeof ItemDetailSchema> & {
   id: number;
-  qrCodeValue: string;
   createdAt: string;
   updatedAt: string;
 };

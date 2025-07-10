@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "dev": "concurrently \"tsc -w\" \"nodemon dist/server.js\"",
     "dev:all": "concurrently \"npm run dev\" \"cd frontend && npm run dev\"",
+    "dev:clean": "lsof -ti:3001 | xargs kill -9 2>/dev/null || true && npm run dev:all",
     "setup-db": "node dist/database/setup.js",
     "reset-db": "node scripts/reset-db.js",
     "populate-db": "node scripts/populate-mock-data.js",

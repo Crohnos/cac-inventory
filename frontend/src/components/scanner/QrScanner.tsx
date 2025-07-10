@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { QrReader } from 'react-qr-reader'
+import { useState, useEffect, useRef } from 'react'
+import { Scanner, IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import { useToastContext } from '../../hooks'
 import './Scanner.css'
 
@@ -11,9 +11,11 @@ interface QrScannerProps {
 const QrScanner = ({ onScan, onError }: QrScannerProps) => {
   const [isCameraStarted, setIsCameraStarted] = useState(false)
   const [permission, setPermission] = useState<'granted' | 'denied' | 'pending'>('pending')
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait')
+  const [isPaused, setIsPaused] = useState(false)
+  const [sessionId] = useState(() => `scanner-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const toast = useToastContext()
   const scannerContainerRef = useRef<HTMLDivElement>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   // Flag to track if this is the first mount - defined outside useEffect
   const isFirstMount = useRef(true);
@@ -55,36 +57,29 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
     }
   }, [toast])
 
-  // Handle device orientation changes
+  // Cleanup media streams on unmount
   useEffect(() => {
-    const handleOrientationChange = () => {
-      if (window.matchMedia("(orientation: portrait)").matches) {
-        setOrientation('portrait')
-      } else {
-        setOrientation('landscape')
-      }
-    }
-
-    // Initial check
-    handleOrientationChange()
-
-    // Add event listeners for orientation changes
-    window.addEventListener('resize', handleOrientationChange)
-    if (window.screen && window.screen.orientation) {
-      window.screen.orientation.addEventListener('change', handleOrientationChange)
-    }
-
     return () => {
-      window.removeEventListener('resize', handleOrientationChange)
-      if (window.screen && window.screen.orientation) {
-        window.screen.orientation.removeEventListener('change', handleOrientationChange)
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => {
+          track.stop()
+        })
       }
     }
   }, [])
 
+  // Add session tracking for debugging
+  useEffect(() => {
+    console.log(`QR Scanner session started: ${sessionId}`)
+    return () => {
+      console.log(`QR Scanner session ended: ${sessionId}`)
+    }
+  }, [sessionId])
+
   const startCamera = () => {
     if (permission === 'granted') {
       setIsCameraStarted(true)
+      setIsPaused(false)
       
       // Request fullscreen on mobile devices for better experience
       if (isMobileDevice() && scannerContainerRef.current && scannerContainerRef.current.requestFullscreen) {
@@ -103,6 +98,15 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
 
   const stopCamera = () => {
     setIsCameraStarted(false)
+    setIsPaused(false)
+    
+    // Cleanup media streams
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => {
+        track.stop()
+      })
+      mediaStreamRef.current = null
+    }
     
     // Exit fullscreen if active
     if (document.fullscreenElement) {
@@ -116,15 +120,14 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   }
 
-  const handleScan = (result: any) => {
-    if (result?.text) {
-      // Play a success sound - can improve user feedback
-      try {
-        const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAuLi4uLi4uLi4uLi4uLi4uLjV1dXV1dXV1dXV1dXV1dXV1e7u7u7u7u7u7u7u7u7u7u7///////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAYSAAAAAAAAAbDRSGNrAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAAMQAaKiAQPBzM5RJWBWFaCDgFbCmH8C+CAICDQTdLj+D6e//iEfxBf/xB+QE/+CAt+9BPxB/Bg+IJ/+ICAlLOUO1ybCEuCDKPVBgxoNGCTBP/r0GoU7/aMvl0KcnCDBJr//ql///qzk/tQYJUG//KpNVIqkxB//ZsHQZ0EpEIgoJMHQOg6DQDQahT/+qdPbBKQOAoM4RgfB0HQdBoB4GgUGgGj/+MYxBgMmCqaHgDEvC6rQNArJENnIf/8z+MSIlm6U/UYEBIiIAyDkGQCQcBAQBkFZ+///V0PDPVLMoVJ2IQjJv//1ZYlUhAGA4CAgAYDj+f/w4EAcA8+CAP///5UWXgUA///LAgD//fAIB4Z7/lgXzv/+MYxB0MmC6iXkBKvo3gjJp0vCiC8KjwmeF+dKILy6UQT/1Cwvl0Cwvl458L89CEF8KJdPwQdLp//8YSdCOF8EBIp6eGdL/u6XxEhAOgdA5C9Bh+f//yiFQb//vhQx////X////5YWXvgpdKIL4I///wQ/+MYxCUMqA6+WAhKvp0vhRReF0EELQO+S4QQYC0LLwvl4QQNgdLp+F+cggvEF4XS6Lpf/wvS4Z0HwpwQQ4UQX//S7oQQQBAIQOeiBzj/5fJZugdCBzEAwBoHIXoMQ////9//1///////gC5c//6hA/+MYxCwMoA6+WBBGvpeCAKIIIW4KAghbggDyCF+agppAEAQDyHOlweQQvS4L5YKAgnS+XS+FECiFEEELwQBh6/lf/1CggeCiOY5i9B0GgEAaDj6DQaAYDAYeQtQYfQdDaD//////+UAf/wYf/+MYxDQMsA6cHgjS3hs47jvFAH4MIQDyCB+dKILwQQQtQQBRBCiCC+CAMIMSggghf//ygCgQB+DCCAKIGHSggCCAOQQvggD+CAPSggjmNoxBTSEA/+dCgcg0A4BkGEGH5////5aWA5DQD/+MYxDgNWBKMHgjF9gggCiCCAOlEF7/7/5WF2AFAHgeDiDCEA8ggfwQQvQQBRBS+CCB+CjwQQX4II5jSCh+ChiDCCAP4II5jgLkEAUByn/CiBnCiB////LDtf8gBRAwBQB4HA4g4DkGD/+MYxDQM6A6IWAIIAAPEICD+U////CCH//CAP//1fCiC///pQsB8CAP5cEA//8MIB+oGA6DQaAQA4KAOCA6Do///a2t///9v//5YKQUAcCgcBoDA8CgMBAHgUDgNA+D///////qdPrv/+MYxDIM+AqKXgCS2g0AQ////9//9QaBUP//////9B0GQDQYBoBoBoGAY////////////qDBiCgGgdBnQZ8E////////////////////pVQaDPgoB//////6f//6s5//+MYxDgJoA6QRgASgDOg0AQD/////////////1KqzSoOA4D/////////////6p0E+kGg4GwL//////////////////////////SqTJB0HwdBwGwM//+H4OA2AwGf/+MYxFwLO8KIXgBS3A0A+DgOA4DYDAb/////5////+D/8H/1//6l/////k////5YeqpMqpMkGdBkqUGypQbKlfKlZUoNf/////6//+WQ5YCgDgKAOAkAYCACgCwCgDgN/////////////+MYxHAJ07aGGABS4P//////////////////FFFFFFFSSSSSSVVVVVVVqqqqqqq////////////////////////////////////////////////////////////////////////////////////////////////+MYxI4LY76IFgBS3////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+MYxKMLK8JoWgAQ3////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+MYxMQAAANIAAAAAA=');
-        audio.play();
-      } catch (err) {
-        console.log('Could not play success sound', err);
-      }
+  const handleScan = (detectedCodes: IDetectedBarcode[]) => {
+    if (detectedCodes.length > 0) {
+      const result = detectedCodes[0].rawValue
+      
+      // Temporarily pause scanning to prevent duplicate scans
+      setIsPaused(true)
+      
+      console.log(`QR code scanned by session ${sessionId}:`, result)
       
       // Add enhanced visual feedback with haptic vibration for mobile
       const flashElement = document.createElement('div');
@@ -134,7 +137,7 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: var(--primary, #2196f3);
+        background-color: var(--primary);
         opacity: 0.7;
         z-index: 9999;
         pointer-events: none;
@@ -163,55 +166,48 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
         document.head.removeChild(styleSheet);
       }, 500);
       
-      onScan(result.text);
+      onScan(result);
       stopCamera(); // Stop camera after successful scan
     }
   }
 
-  const handleError = (error: Error) => {
-    console.error('QR Scanner error:', error)
-    toast.error('Error scanning QR code: ' + error.message)
-    if (onError) onError(error)
+  const handleError = (error: unknown) => {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error(`QR Scanner error in session ${sessionId}:`, error)
+    toast.error('Error scanning QR code: ' + errorMessage)
+    if (onError && error instanceof Error) onError(error)
   }
-  
-  // Explicitly use the handleError function to avoid TS error
-  React.useEffect(() => {
-    const testError = null;
-    if (testError) handleError(new Error('test'));
-  }, []);
 
   return (
     <div className="scanner-container" ref={scannerContainerRef}>
       {isCameraStarted ? (
         <div className="qr-reader-container">
           <div className="camera-view">
-            <QrReader
-              constraints={{ 
+            <Scanner
+              onScan={handleScan}
+              onError={handleError}
+              paused={isPaused}
+              constraints={{
                 facingMode: 'environment',
                 width: { min: 640, ideal: 1280, max: 1920 },
-                height: { min: 480, ideal: 720, max: 1080 },
-                aspectRatio: orientation === 'portrait' ? 9/16 : 16/9
+                height: { min: 480, ideal: 720, max: 1080 }
               }}
-              onResult={handleScan}
-              scanDelay={300} // Faster scan frequency for better UX
-              videoStyle={{ 
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block'
+              styles={{
+                container: {
+                  width: '100%',
+                  height: '100%',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0
+                },
+                video: {
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }
               }}
-              containerStyle={{
-                width: '100%',
-                height: '100%',
-                position: 'absolute',
-                top: 0,
-                left: 0
-              }}
-              videoContainerStyle={{
-                width: '100%',
-                height: '100%',
-                padding: 0
-              }}
+              scanDelay={300}
+              allowMultiple={false}
             />
             {/* Improved scanner targeting UI with animated border */}
             <div className="targeting-box">
@@ -226,13 +222,27 @@ const QrScanner = ({ onScan, onError }: QrScannerProps) => {
             <div className="scanning-indicator">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <span className="indicator-dot"></span>
-                Scanning...
+                {isPaused ? 'Processing...' : 'Scanning...'}
               </div>
             </div>
             
             {/* Helper text */}
             <div className="helper-text">
               Center QR code in box
+            </div>
+            
+            {/* Session info for debugging */}
+            <div className="session-info" style={{ 
+              position: 'absolute', 
+              bottom: '10px', 
+              left: '10px', 
+              fontSize: '10px', 
+              color: 'rgba(255,255,255,0.7)', 
+              backgroundColor: 'rgba(0,0,0,0.5)', 
+              padding: '2px 6px', 
+              borderRadius: '4px' 
+            }}>
+              Session: {sessionId.slice(-6)}
             </div>
           </div>
           

@@ -3,18 +3,33 @@
 
 
 
-/* Color variables */
+/* Color variables - CACCC Brand Colors */
 :root {
-  --primary-light: #e3f2fd;
-  --primary: #2196f3;
-  --primary-rgb: 33, 150, 243;
-  --primary-dark: #1976d2;
-  --success: #4caf50;
+  /* CACCC Brand Colors */
+  --caccc-grey: #595a5c;
+  --caccc-green: #45b249;
+  
+  /* Primary colors using CACCC brand */
+  --primary-light: rgba(69, 178, 73, 0.1);
+  --primary: var(--caccc-green);
+  --primary-rgb: 69, 178, 73;
+  --primary-dark: #3a9640;
+  
+  /* Secondary colors using CACCC grey */
+  --secondary: var(--caccc-grey);
+  --secondary-light: rgba(89, 90, 92, 0.1);
+  --secondary-rgb: 89, 90, 92;
+  --secondary-dark: #4a4b4d;
+  
+  /* Status colors */
+  --success: var(--caccc-green);
   --warning: #ff9800;
-  --danger: #f44336;
-  --danger-rgb: 244, 67, 54;
+  --danger: #dc3545;
+  --danger-rgb: 220, 53, 69;
   --danger-light: rgba(var(--danger-rgb), 0.15);
-  --text-secondary: #6c757d;
+  
+  /* Text and UI colors */
+  --text-secondary: var(--caccc-grey);
   --border-color: #dee2e6;
   --card-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   --max-content-width: 1600px; /* Increased from 1200px to make better use of space */
@@ -80,7 +95,7 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--pico-primary);
+  color: var(--primary);
 }
 
 .sidebar-logo-link:hover {
@@ -149,19 +164,19 @@ body {
   align-items: center;
   padding: 0.85rem 1.25rem; /* Slightly larger padding */
   text-decoration: none;
-  color: var(--pico-color);
+  color: var(--secondary);
   border-left: 3px solid transparent;
 }
 
 .sidebar-link:hover {
-  background-color: var(--pico-background-color);
-  color: var(--pico-color);
+  background-color: var(--secondary-light);
+  color: var(--secondary-dark);
 }
 
 .sidebar-link.active {
   background-color: var(--pico-card-background-color);
-  color: var(--pico-primary);
-  border-left-color: var(--pico-primary);
+  color: var(--primary);
+  border-left-color: var(--primary);
   font-weight: 600; /* Make active item bolder */
 }
 
@@ -181,13 +196,13 @@ body {
   .sidebar-link:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-color: var(--pico-primary);
+    border-color: var(--primary);
   }
   
   .sidebar-link.active {
-    background-color: var(--pico-primary);
+    background-color: var(--primary);
     color: white;
-    border-color: var(--pico-primary);
+    border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
   
@@ -272,7 +287,7 @@ body {
 .mobile-title {
   font-weight: 700;
   font-size: 1.2rem;
-  color: var(--pico-primary, var(--primary));
+  color: var(--primary);
 }
 
 /* Main content area */
@@ -432,7 +447,7 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: #2196f3;
+  color: var(--primary);
 }
 
 .navbar-menu {
@@ -449,11 +464,11 @@ body {
 }
 
 .navbar-menu a:hover {
-  color: #2196f3;
+  color: var(--primary);
 }
 
 .navbar-menu a.active {
-  color: #2196f3;
+  color: var(--primary);
   font-weight: bold;
 }
 
@@ -515,8 +530,8 @@ button, [role="button"], .button {
 }
 
 button.primary, [role="button"].primary, .button.primary {
-  background-color: var(--pico-primary, var(--primary));
-  color: var(--pico-primary-inverse, var(--contrast, white));
+  background-color: var(--primary);
+  color: white;
 }
 
 button.danger, [role="button"].danger, .button.danger {
@@ -536,15 +551,15 @@ button.warning, [role="button"].warning, .button.warning {
 
 button.secondary, [role="button"].secondary, .button.secondary {
   background-color: transparent;
-  color: var(--pico-primary, var(--primary));
-  border: 1px solid var(--pico-primary, var(--primary));
+  color: var(--secondary);
+  border: 1px solid var(--secondary);
 }
 
 button.link, [role="button"].link, .button.link {
   background: none;
   border: none;
   padding: 0.3rem 0.5rem;
-  color: var(--pico-primary, var(--primary));
+  color: var(--primary);
   text-decoration: underline;
   font-weight: normal;
 }
@@ -1365,11 +1380,11 @@ td:nth-child(5) {
 
 /* Edit button styling */
 .edit-button {
-  background-color: var(--secondary-background, #6c757d);
+  background-color: var(--secondary);
 }
 
 .edit-button:hover {
-  background-color: var(--secondary-hover-background, #5a6268);
+  background-color: var(--secondary-dark);
 }
 
 /* Item details button styling */

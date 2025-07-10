@@ -3,6 +3,7 @@ import {
   getAllCategories, 
   createCategory, 
   getCategoryById, 
+  getCategoryByQrCode,
   updateCategory, 
   deleteCategory,
   getCategorySizes,
@@ -23,6 +24,9 @@ router.get('/', getAllCategories);
 
 // POST new category
 router.post('/', validate(ItemCategorySchema), createCategory);
+
+// GET category by QR code
+router.get('/qr/:qrCodeValue', getCategoryByQrCode);
 
 // GET a single category by ID
 router.get('/:id', getCategoryById);

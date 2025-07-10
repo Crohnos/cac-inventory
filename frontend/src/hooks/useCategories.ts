@@ -12,6 +12,7 @@ export const categoryKeys = {
   list: (filters: any) => [...categoryKeys.lists(), filters] as const,
   details: () => [...categoryKeys.all, 'detail'] as const,
   detail: (id: number) => [...categoryKeys.details(), id] as const,
+  qrCode: (code: string) => [...categoryKeys.all, 'qrCode', code] as const,
   sizes: (categoryId: number) => [...categoryKeys.detail(categoryId), 'sizes'] as const,
 }
 
@@ -29,6 +30,17 @@ export const useCategory = (id: number) => {
     queryKey: categoryKeys.detail(id),
     queryFn: () => categoryService.getCategoryById(id),
     enabled: !!id // Only run if id is provided
+  })
+}
+
+// Hook for retrieving a category by QR code
+export const useCategoryByQrCode = (qrCodeValue: string, options = {}) => {
+  return useQuery({
+    queryKey: categoryKeys.qrCode(qrCodeValue),
+    queryFn: () => categoryService.getCategoryByQrCode(qrCodeValue),
+    enabled: !!qrCodeValue, // Only run if qrCodeValue is provided
+    retry: false, // Don't retry if it fails (likely means the QR code doesn't exist)
+    ...options
   })
 }
 

@@ -24,6 +24,7 @@ export const CategorySizeSchema = z.object({
 // Types for ItemCategory
 export type ItemCategory = z.infer<typeof ItemCategorySchema> & {
   id: number;
+  qrCodeValue?: string;
   createdAt: string;
   updatedAt: string;
 };

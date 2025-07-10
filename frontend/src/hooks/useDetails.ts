@@ -14,7 +14,6 @@ export const detailKeys = {
   list: (filters: any) => [...detailKeys.lists(), filters] as const,
   details: () => [...detailKeys.all, 'detail'] as const,
   detail: (id: number) => [...detailKeys.details(), id] as const,
-  qrCode: (code: string) => [...detailKeys.all, 'qrCode', code] as const,
 }
 
 // Hook for retrieving all item details with optional filtering
@@ -38,16 +37,6 @@ export const useDetail = (id: number) => {
   })
 }
 
-// Hook for retrieving an item detail by QR code
-export const useDetailByQrCode = (qrCodeValue: string, options = {}) => {
-  return useQuery({
-    queryKey: detailKeys.qrCode(qrCodeValue),
-    queryFn: () => detailService.getDetailByQrCode(qrCodeValue),
-    enabled: !!qrCodeValue, // Only run if qrCodeValue is provided
-    retry: false, // Don't retry if it fails (likely means the QR code doesn't exist)
-    ...options
-  })
-}
 
 // Hook for creating a new item detail
 export const useCreateDetail = () => {

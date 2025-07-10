@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS ItemCategory (
   name TEXT NOT NULL UNIQUE,
   description TEXT,
   lowStockThreshold INTEGER DEFAULT 5,
+  qrCodeValue TEXT UNIQUE,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
@@ -36,7 +37,6 @@ CREATE TABLE IF NOT EXISTS ItemDetail (
   sizeId INTEGER,
   condition TEXT CHECK( condition IN ('New', 'Gently Used', 'Heavily Used') ) NOT NULL DEFAULT 'New',
   location TEXT CHECK( location IN ('McKinney', 'Plano') ) NOT NULL,
-  qrCodeValue TEXT UNIQUE,
   receivedDate TEXT NOT NULL,
   donorInfo TEXT,
   approxPrice REAL,

@@ -24,11 +24,6 @@ export const getDetailById = async (id: number): Promise<ItemDetail> => {
   return response.data
 }
 
-// Get an item detail by QR code
-export const getDetailByQrCode = async (qrCodeValue: string): Promise<ItemDetail> => {
-  const response = await api.get<ItemDetail>(`/item-details/qr/${qrCodeValue}`)
-  return response.data
-}
 
 // Create a new item detail
 export const createDetail = async (data: CreateItemDetailRequest): Promise<ItemDetail> => {

@@ -19,6 +19,12 @@ export const getCategoryById = async (id: number): Promise<ItemCategory> => {
   return response.data
 }
 
+// Get a category by QR code
+export const getCategoryByQrCode = async (qrCodeValue: string): Promise<ItemCategory> => {
+  const response = await api.get<ItemCategory>(`/item-categories/qr/${qrCodeValue}`)
+  return response.data
+}
+
 // Create a new category
 export const createCategory = async (data: CreateItemCategoryRequest): Promise<ItemCategory> => {
   const response = await api.post<ItemCategory>('/item-categories', data)

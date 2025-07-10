@@ -14,12 +14,12 @@
     "@tanstack/react-query": "^5.17.15",
     "@tanstack/react-router": "^1.0.3",
     "@tanstack/react-table": "^8.11.3",
+    "@yudiel/react-qr-scanner": "^2.3.1",
     "axios": "^1.6.5",
     "lucide-react": "^0.507.0",
     "qrcode.react": "^3.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-qr-reader": "^3.0.0-beta-1",
     "react-select": "^5.10.1"
   },
   "devDependencies": {

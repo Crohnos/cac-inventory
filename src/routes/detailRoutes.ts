@@ -3,7 +3,6 @@ import {
   getAllDetails, 
   createDetail, 
   getDetailById, 
-  getDetailByQrCode,
   updateDetail, 
   deactivateDetail,
   transferDetail
@@ -22,9 +21,6 @@ router.get('/', getAllDetails);
 
 // POST new item detail
 router.post('/', validate(ItemDetailSchema), createDetail);
-
-// GET item detail by QR code
-router.get('/qr/:qrCodeValue', getDetailByQrCode);
 
 // GET item detail by ID
 router.get('/:id', getDetailById);
