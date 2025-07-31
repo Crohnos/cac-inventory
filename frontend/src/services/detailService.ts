@@ -56,3 +56,46 @@ export const transferDetail = async (id: number, data: ItemTransferRequest): Pro
   }>(`/item-details/${id}/transfer`, data)
   return response.data
 }
+
+// Bulk operations
+export const bulkCreateDetails = async (data: {
+  categoryId: number
+  quantity: number
+  location: 'McKinney' | 'Plano'
+  sizeId?: number | null
+}): Promise<{
+  success: boolean
+  message: string
+  createdCount: number
+  items: ItemDetail[]
+}> => {
+  const response = await api.post('/item-details/bulk-create', data)
+  return response.data
+}
+
+export const bulkDeactivateDetails = async (data: {
+  categoryId: number
+  quantity: number
+  location: 'McKinney' | 'Plano'
+}): Promise<{
+  success: boolean
+  message: string
+  deactivatedCount: number
+}> => {
+  const response = await api.post('/item-details/bulk-deactivate', data)
+  return response.data
+}
+
+export const bulkTransferDetails = async (data: {
+  categoryId: number
+  quantity: number
+  fromLocation: 'McKinney' | 'Plano'
+  toLocation: 'McKinney' | 'Plano'
+}): Promise<{
+  success: boolean
+  message: string
+  transferredCount: number
+}> => {
+  const response = await api.post('/item-details/bulk-transfer', data)
+  return response.data
+}

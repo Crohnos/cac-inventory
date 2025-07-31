@@ -5,7 +5,10 @@ import {
   getDetailById, 
   updateDetail, 
   deactivateDetail,
-  transferDetail
+  transferDetail,
+  bulkCreateDetails,
+  bulkDeactivateDetails,
+  bulkTransferDetails
 } from '../controllers/detailController.js';
 import { validate } from '../middleware/validationMiddleware.js';
 import { 
@@ -33,5 +36,10 @@ router.patch('/:id/deactivate', deactivateDetail);
 
 // PATCH transfer item to new location
 router.patch('/:id/transfer', validate(ItemTransferSchema), transferDetail);
+
+// Bulk operations
+router.post('/bulk-create', bulkCreateDetails);
+router.post('/bulk-deactivate', bulkDeactivateDetails);
+router.post('/bulk-transfer', bulkTransferDetails);
 
 export default router;

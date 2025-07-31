@@ -4,6 +4,7 @@ import { useCategoryByQrCode } from '../hooks'
 import QrScanner from '../components/scanner/QrScanner'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorDisplay from '../components/common/ErrorDisplay'
+import CategoryBulkOperations from '../components/scanner/CategoryBulkOperations'
 import '../components/scanner/Scanner.css'
 
 const ScannerPage = () => {
@@ -263,6 +264,13 @@ const ScannerPage = () => {
                   View Items in Category
                 </Link>
               </div>
+              
+              <CategoryBulkOperations 
+                category={scannedCategory} 
+                onOperationComplete={() => {
+                  refetch()
+                }}
+              />
             </div>
           ) : (
             <div className="text-center no-item-found">

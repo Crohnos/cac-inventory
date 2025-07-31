@@ -407,3 +407,220 @@ export const transferDetail = async (
     next(error);
   }
 };
+
+/**
+ * Bulk create items for a category
+ */
+export const bulkCreateDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId, quantity, location, sizeId } = req.body;
+    
+    // Validate quantity (1-3)
+    if (!quantity || quantity < 1 || quantity > 3) {
+      return res.status(400).json({
+        error: 'Invalid quantity',
+        details: 'Quantity must be between 1 and 3'
+      });
+    }
+    
+    // Validate category exists
+    const category = await dbAsync.get(
+      'SELECT * FROM ItemCategory WHERE id = ?',
+      [categoryId]
+    );
+    
+    if (!category) {
+      throw new NotFoundError(`Category with ID ${categoryId} not found`);
+    }
+    
+    // If size is provided, validate it's associated with the category
+    if (sizeId) {
+      const sizeAssociation = await dbAsync.get(
+        'SELECT * FROM ItemSize WHERE itemCategoryId = ? AND sizeId = ?',
+        [categoryId, sizeId]
+      );
+      
+      if (!sizeAssociation) {
+        return res.status(400).json({
+          error: 'Invalid size for category',
+          details: `Size ${sizeId} is not associated with category ${categoryId}`
+        });
+      }
+    }
+    
+    const timestamp = getCurrentTimestamp();
+    const receivedDate = new Date().toISOString().split('T')[0];
+    const createdItems = [];
+    
+    // Create the specified number of items
+    for (let i = 0; i < quantity; i++) {
+      const result = await dbAsync.run(
+        `INSERT INTO ItemDetail (
+          itemCategoryId, sizeId, condition, location, 
+          receivedDate, isActive, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          categoryId,
+          sizeId || null,
+          'New',
+          location,
+          receivedDate,
+          1,
+          timestamp,
+          timestamp
+        ]
+      );
+      
+      // Get the created item with category and size names
+      const createdItem = await dbAsync.get(`
+        SELECT 
+          d.*,
+          c.name as categoryName,
+          s.name as sizeName
+        FROM ItemDetail d
+        LEFT JOIN ItemCategory c ON d.itemCategoryId = c.id
+        LEFT JOIN Size s ON d.sizeId = s.id
+        WHERE d.id = ?
+      `, [result.lastID]);
+      
+      createdItems.push(createdItem);
+    }
+    
+    res.json({
+      success: true,
+      message: `Successfully created ${quantity} item${quantity > 1 ? 's' : ''}`,
+      createdCount: quantity,
+      items: createdItems
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk deactivate items for a category
+ */
+export const bulkDeactivateDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId, quantity, location } = req.body;
+    
+    // Validate quantity (1-3)
+    if (!quantity || quantity < 1 || quantity > 3) {
+      return res.status(400).json({
+        error: 'Invalid quantity',
+        details: 'Quantity must be between 1 and 3'
+      });
+    }
+    
+    // Find active items for the category at the specified location
+    const activeItems = await dbAsync.all(
+      `SELECT id FROM ItemDetail 
+       WHERE itemCategoryId = ? AND location = ? AND isActive = 1 
+       ORDER BY receivedDate ASC, id ASC 
+       LIMIT ?`,
+      [categoryId, location, quantity]
+    );
+    
+    if (activeItems.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No active items found to deactivate',
+        deactivatedCount: 0
+      });
+    }
+    
+    const timestamp = getCurrentTimestamp();
+    const itemIds = activeItems.map(item => item.id);
+    const placeholders = itemIds.map(() => '?').join(',');
+    
+    // Deactivate the items
+    await dbAsync.run(
+      `UPDATE ItemDetail 
+       SET isActive = 0, updatedAt = ? 
+       WHERE id IN (${placeholders})`,
+      [timestamp, ...itemIds]
+    );
+    
+    res.json({
+      success: true,
+      message: `Successfully deactivated ${activeItems.length} item${activeItems.length > 1 ? 's' : ''}`,
+      deactivatedCount: activeItems.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk transfer items between locations
+ */
+export const bulkTransferDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { categoryId, quantity, fromLocation, toLocation } = req.body;
+    
+    // Validate quantity (1-3)
+    if (!quantity || quantity < 1 || quantity > 3) {
+      return res.status(400).json({
+        error: 'Invalid quantity',
+        details: 'Quantity must be between 1 and 3'
+      });
+    }
+    
+    // Validate locations are different
+    if (fromLocation === toLocation) {
+      return res.status(400).json({
+        error: 'Invalid transfer',
+        details: 'Source and destination locations must be different'
+      });
+    }
+    
+    // Find active items for the category at the source location
+    const itemsToTransfer = await dbAsync.all(
+      `SELECT id FROM ItemDetail 
+       WHERE itemCategoryId = ? AND location = ? AND isActive = 1 
+       ORDER BY receivedDate ASC, id ASC 
+       LIMIT ?`,
+      [categoryId, fromLocation, quantity]
+    );
+    
+    if (itemsToTransfer.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No items found to transfer',
+        transferredCount: 0
+      });
+    }
+    
+    const timestamp = getCurrentTimestamp();
+    const itemIds = itemsToTransfer.map(item => item.id);
+    const placeholders = itemIds.map(() => '?').join(',');
+    
+    // Transfer the items
+    await dbAsync.run(
+      `UPDATE ItemDetail 
+       SET location = ?, updatedAt = ? 
+       WHERE id IN (${placeholders})`,
+      [toLocation, timestamp, ...itemIds]
+    );
+    
+    res.json({
+      success: true,
+      message: `Successfully transferred ${itemsToTransfer.length} item${itemsToTransfer.length > 1 ? 's' : ''} from ${fromLocation} to ${toLocation}`,
+      transferredCount: itemsToTransfer.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -152,11 +152,23 @@ export const getCategoryByQrCode = async (
       });
     }
     
+    // Get sizes associated with this category
+    const sizes = await dbAsync.all(`
+      SELECT 
+        s.id as sizeId,
+        s.name as sizeName
+      FROM Size s
+      JOIN ItemSize is2 ON s.id = is2.sizeId
+      WHERE is2.itemCategoryId = ?
+      ORDER BY s.name
+    `, [category.id]);
+    
     // Generate QR code data URL
     const qrCodeDataUrl = await generateQrCodeDataUrl(qrCodeValue);
     
     res.json({
       ...category,
+      sizes,
       qrCodeDataUrl
     });
   } catch (error) {
