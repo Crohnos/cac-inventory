@@ -57,4 +57,27 @@ CREATE TABLE IF NOT EXISTS ItemPhoto (
   updatedAt TEXT NOT NULL,
   FOREIGN KEY (itemDetailId) REFERENCES ItemDetail(id) ON DELETE CASCADE
 );
+
+-- RainbowRoomCheckout Table
+CREATE TABLE IF NOT EXISTS RainbowRoomCheckout (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  checkoutDate TEXT NOT NULL,
+  location TEXT CHECK( location IN ('CACCC Plano', 'CACCC McKinney') ) NOT NULL,
+  workerFirstName TEXT NOT NULL,
+  workerLastName TEXT NOT NULL,
+  department TEXT CHECK( department IN ('CPS/DFPS', 'CACCC FA/CE', 'Family Compass', 'Law Enforcement') ) NOT NULL,
+  caseNumber TEXT NOT NULL,
+  allegations TEXT NOT NULL, -- JSON array of selected allegations
+  parentGuardianFirstName TEXT,
+  parentGuardianLastName TEXT,
+  zipCode TEXT,
+  allegedPerpetratorFirstName TEXT,
+  allegedPerpetratorLastName TEXT,
+  numberOfChildren INTEGER NOT NULL,
+  itemCategoryId INTEGER NOT NULL,
+  itemsRemovedCount INTEGER NOT NULL,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL,
+  FOREIGN KEY (itemCategoryId) REFERENCES ItemCategory(id) ON DELETE RESTRICT
+);
 `;

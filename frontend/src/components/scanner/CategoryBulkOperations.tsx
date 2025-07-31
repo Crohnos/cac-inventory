@@ -6,6 +6,7 @@ import {
   useBulkDeactivateItems, 
   useBulkTransferItems 
 } from '../../hooks/useBulkOperations'
+import CheckoutForm from './CheckoutForm'
 
 interface CategoryBulkOperationsProps {
   category: ItemCategory & { 
@@ -23,6 +24,8 @@ const CategoryBulkOperations = ({ category, onOperationComplete }: CategoryBulkO
   const [selectedLocation, setSelectedLocation] = useState<'McKinney' | 'Plano'>('McKinney')
   const [targetLocation, setTargetLocation] = useState<'McKinney' | 'Plano'>('Plano')
   const [selectedSize, setSelectedSize] = useState<number | null>(null)
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false)
+  const [checkoutInfo, setCheckoutInfo] = useState<{ itemsRemovedCount: number } | null>(null)
   
   const toast = useToastContext()
   
@@ -73,8 +76,10 @@ const CategoryBulkOperations = ({ category, onOperationComplete }: CategoryBulkO
         toast.success(`Removed ${quantity} item${quantity > 1 ? 's' : ''} from ${category.name}`)
       }
       
-      handleCancel()
-      onOperationComplete?.()
+      // Show checkout form after successful removal
+      setCheckoutInfo({ itemsRemovedCount: result.deactivatedCount })
+      setShowCheckoutForm(true)
+      handleCancel() // Reset the operation form
     } catch (error: any) {
       toast.error(error.message || 'Failed to remove items')
     }
@@ -100,6 +105,18 @@ const CategoryBulkOperations = ({ category, onOperationComplete }: CategoryBulkO
     } catch (error: any) {
       toast.error(error.message || 'Failed to transfer items')
     }
+  }
+  
+  const handleCheckoutComplete = () => {
+    setShowCheckoutForm(false)
+    setCheckoutInfo(null)
+    onOperationComplete?.()
+  }
+  
+  const handleCheckoutCancel = () => {
+    setShowCheckoutForm(false)
+    setCheckoutInfo(null)
+    // Don't call onOperationComplete since the items were already removed
   }
   
   const isLoading = bulkCreate.isPending || bulkDeactivate.isPending || bulkTransfer.isPending
@@ -363,6 +380,16 @@ const CategoryBulkOperations = ({ category, onOperationComplete }: CategoryBulkO
           </button>
         </div>
       </form>
+      
+      {/* Checkout Form Modal */}
+      {showCheckoutForm && checkoutInfo && (
+        <CheckoutForm
+          category={category}
+          itemsRemovedCount={checkoutInfo.itemsRemovedCount}
+          onComplete={handleCheckoutComplete}
+          onCancel={handleCheckoutCancel}
+        />
+      )}
     </div>
   )
 }

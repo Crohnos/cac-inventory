@@ -10,6 +10,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import detailRoutes from './routes/detailRoutes.js';
 import photoRoutes from './routes/photoRoutes.js';
 import importExportRoutes from './routes/importExportRoutes.js';
+import checkoutRoutes from './routes/checkoutRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -95,6 +96,7 @@ app.use('/api/item-categories', categoryRoutes);
 app.use('/api/item-details', detailRoutes);
 app.use('/api', photoRoutes);
 app.use('/api', importExportRoutes);
+app.use('/api/checkouts', checkoutRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
