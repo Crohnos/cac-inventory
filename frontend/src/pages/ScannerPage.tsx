@@ -1,330 +1,136 @@
-import { useState, useEffect } from 'react'
-import { Link } from '@tanstack/react-router'
-import { useCategoryByQrCode } from '../hooks'
-import QrScanner from '../components/scanner/QrScanner'
-import LoadingSpinner from '../components/common/LoadingSpinner'
-import ErrorDisplay from '../components/common/ErrorDisplay'
-import '../components/scanner/Scanner.css'
+import React from 'react';
+import { Smartphone, QrCode, Camera, CheckCircle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const ScannerPage = () => {
-  const [scannedQrCode, setScannedQrCode] = useState<string | null>(null)
-  const [scanError, setScanError] = useState<Error | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
-  
-  // Detect if user is on mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
-      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
-      setIsMobile(mobileRegex.test(userAgent))
-    }
-    
-    checkMobile()
-    
-    // Re-check on resize (orientation change)
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-  
-  // Fetch category data when QR code is scanned
-  const { 
-    data: scannedCategory, 
-    isLoading, 
-    error,
-    refetch,
-  } = useCategoryByQrCode(scannedQrCode || '', {
-    enabled: !!scannedQrCode
-  })
-  
-  // Function to handle clearing the scanned category
-  const clearScannedCategory = () => {
-    // Just clearing the state is sufficient as the query will
-    // not be enabled without a valid QR code
-    setScannedQrCode(null)
-  }
-  
-  const handleScan = (qrCode: string) => {
-    setScannedQrCode(qrCode)
-    setScanError(null)
-  }
-  
-  const handleError = (error: Error) => {
-    setScanError(error)
-  }
-  
-  const handleScanAgain = () => {
-    setScannedQrCode(null)
-    setScanError(null)
-    clearScannedCategory()
-  }
-  
+export const ScannerPage: React.FC = () => {
   return (
-    <div className="scanner-page-container">
-      <h1>QR Scanner</h1>
-      <p className="scanner-intro">
-        Scan QR codes to quickly view item categories and manage inventory.
-      </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-brand">QR Code Scanning</h1>
+        <p className="text-caccc-grey/70">Learn how to use QR codes with your phone's camera</p>
+      </div>
       
-      <article className="scanner-card">
-        {!scannedQrCode ? (
-          <QrScanner onScan={handleScan} onError={handleError} />
-        ) : (
+      {/* Primary Method - Native Camera */}
+      <div className="bg-gradient-to-br from-caccc-green/10 to-caccc-green/20 rounded-lg p-8">
+        <div className="text-center mb-6">
+          <Smartphone className="h-16 w-16 text-caccc-green mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-brand mb-2">Recommended Method</h2>
+          <p className="text-lg text-caccc-grey/80">Use your phone's built-in camera app</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <div className="scanned-result">
-              <h3>QR Code Scanned Successfully</h3>
-              <p className="qr-value">
-                {scannedQrCode}
-              </p>
+            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-white font-bold">1</span>
             </div>
-            <button 
-              onClick={handleScanAgain} 
-              className="primary camera-button"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                <circle cx="12" cy="13" r="4"></circle>
-              </svg>
-              Scan Another Code
-            </button>
-          </div>
-        )}
-      </article>
-      
-      {scanError && (
-        <article className="error-card">
-          <ErrorDisplay error={scanError} />
-          <button 
-            onClick={handleScanAgain}
-            className="camera-button"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 2v6h-6"></path>
-              <path d="M3 12a9 9 0 0 1 15-6.7l3 2.7"></path>
-              <path d="M3 22v-6h6"></path>
-              <path d="M21 12a9 9 0 0 1-15 6.7l-3-2.7"></path>
-            </svg>
-            Try Again
-          </button>
-        </article>
-      )}
-      
-      {scannedQrCode && (
-        <article className="scanner-card item-result-card">
-          {isLoading ? (
-            <LoadingSpinner text="Loading category details..." />
-          ) : error ? (
-            <div>
-              <ErrorDisplay 
-                error={error instanceof Error ? error : new Error('Category not found')} 
-                retry={refetch}
-              />
-              <div className="item-error-actions">
-                <span className="error-hint">QR code may be invalid or category may have been removed.</span>
-                <button onClick={handleScanAgain} className="secondary">
-                  Scan New Category
-                </button>
-              </div>
-            </div>
-          ) : scannedCategory ? (
-            <div className="card" style={{ borderRadius: '12px' }}>
-              <div style={{
-                backgroundColor: 'var(--primary-light)',
-                padding: '12px',
-                marginBottom: '15px',
-                borderRadius: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '5px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: 'var(--primary)',
-                  marginBottom: '5px'
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
-                  <h3 style={{ margin: '0' }}>Category Found</h3>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold'
-                }}>
-                  <span style={{ color: 'var(--primary)' }}>{scannedCategory.name}</span>
-                </div>
-              </div>
-              
-              <dl style={{ 
-                backgroundColor: 'var(--card-sectionning-background-color, var(--card-background-color))',
-                padding: '15px',
-                borderRadius: '8px',
-                margin: '0 0 15px 0'
-              }}>
-                <div className="grid" style={{ 
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                  gap: isMobile ? '12px' : '15px'
-                }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '2px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                    borderRadius: '6px'
-                  }}>
-                    <dt style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Total Items
-                    </dt>
-                    <dd style={{ fontSize: '1.5rem', margin: '0', fontWeight: 'bold' }}>
-                      {scannedCategory.totalQuantity || 0}
-                    </dd>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '2px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                    borderRadius: '6px'
-                  }}>
-                    <dt style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Low Stock Threshold
-                    </dt>
-                    <dd style={{ fontSize: '1.5rem', margin: '0', fontWeight: 'bold' }}>
-                      {scannedCategory.lowStockThreshold}
-                    </dd>
-                  </div>
-                  
-                  {scannedCategory.description && (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: '2px',
-                      padding: '8px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                      borderRadius: '6px',
-                      gridColumn: isMobile ? '1' : '1 / -1'
-                    }}>
-                      <dt style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Description
-                      </dt>
-                      <dd style={{ fontSize: '1rem', margin: '0', fontWeight: '500' }}>
-                        {scannedCategory.description}
-                      </dd>
-                    </div>
-                  )}
-                </div>
-              </dl>
-              
-              <div className={isMobile ? 'flex-col gap-1' : 'flex gap-1'} style={{ display: 'flex', marginTop: '15px' }}>
-                <Link 
-                  to={`/categories/${scannedCategory.id}`} 
-                  className="button primary"
-                  style={{
-                    flex: isMobile ? 'unset' : '1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px'
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  View Category Details
-                </Link>
-                
-                <Link 
-                  to={`/items?categoryId=${scannedCategory.id}`} 
-                  className="button"
-                  style={{
-                    flex: isMobile ? 'unset' : '1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px'
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  View Items in Category
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center no-item-found">
-              <p>No category found for this QR code.</p>
-              <button onClick={handleScanAgain} className="primary camera-button">
-                Scan Another Code
-              </button>
-            </div>
-          )}
-        </article>
-      )}
-      
-      {!scannedQrCode && !scanError && (
-        <article className="instructions-card">
-          <header>
-            <h3>How to Use the Scanner</h3>
-          </header>
-          
-          <div className="instructions-grid">
-            <div className="instruction-step">
-              <div className="step-number">1</div>
-              <p className="step-text">
-                Tap "Start Camera" to activate the scanner
-              </p>
-            </div>
-            
-            <div className="instruction-step">
-              <div className="step-number">2</div>
-              <p className="step-text">
-                Position QR code in the highlighted box
-              </p>
-            </div>
-            
-            <div className="instruction-step">
-              <div className="step-number">3</div>
-              <p className="step-text">
-                Hold steady until code is recognized
-              </p>
-            </div>
-            
-            <div className="instruction-step">
-              <div className="step-number">4</div>
-              <p className="step-text">
-                View category details and manage items
-              </p>
-            </div>
+            <h3 className="font-semibold mb-2 text-brand">Open Camera</h3>
+            <p className="text-sm text-caccc-grey/70">Open your iPhone or Android camera app</p>
           </div>
           
-          <footer className="scanner-tips-footer">
-            <div className="tips-heading">Tips for Mobile Scanning:</div>
-            <ul className="tips-list">
-              <li>Allow camera permissions when prompted</li>
-              <li>Ensure good lighting conditions</li>
-              <li>Hold your device steady for best results</li>
-              <li>QR code should be clearly visible and undamaged</li>
-              {isMobile && <li>For better viewing, rotate to landscape mode after scanning</li>}
-            </ul>
-          </footer>
-        </article>
-      )}
-    </div>
-  )
-}
+          <div className="text-center">
+            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-white font-bold">2</span>
+            </div>
+            <h3 className="font-semibold mb-2 text-brand">Point & Scan</h3>
+            <p className="text-sm text-caccc-grey/70">Point camera at the QR code on bins/shelves</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-white font-bold">3</span>
+            </div>
+            <h3 className="font-semibold mb-2 text-brand">Tap Link</h3>
+            <p className="text-sm text-caccc-grey/70">Tap the notification to open inventory actions</p>
+          </div>
+        </div>
+        
+        <div className="mt-6 p-4 bg-caccc-green/20 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <CheckCircle className="h-5 w-5 text-caccc-green-dark mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-caccc-green-dark mb-1">Why this works best:</p>
+              <ul className="text-caccc-green-dark space-y-1">
+                <li>• No app download required</li>
+                <li>• Works instantly with any phone</li>
+                <li>• Faster than opening apps first</li>
+                <li>• Perfect for volunteers and staff</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
-export default ScannerPage
+      {/* QR Code Management */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <QrCode className="h-6 w-6 text-caccc-green" />
+          <h3 className="text-lg font-semibold text-brand">QR Code Management</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium text-brand mb-2">View & Print QR Codes</h4>
+            <p className="text-sm text-caccc-grey/70 mb-4">
+              Go to any item's detail page to see its QR code. You can print or download it to attach to bins and shelves.
+            </p>
+            <Link to="/" className="btn-primary inline-flex items-center text-sm">
+              Browse Inventory <ArrowRight className="h-3 w-3 ml-1" />
+            </Link>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-2">Test QR Scanning</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Try scanning a QR code from an item detail page with your phone to see how it works.
+            </p>
+            <div className="text-sm text-gray-500">
+              Example: <code className="bg-gray-100 px-2 py-1 rounded">/{window.location.host}/qr/RR-12345678</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Troubleshooting */}
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Troubleshooting</h3>
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-1">QR code won't scan?</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Make sure the QR code is well-lit and in focus</li>
+              <li>• Try moving your phone closer or further away</li>
+              <li>• Ensure you're connected to the company WiFi</li>
+              <li>• Clean your camera lens if it's dirty</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-medium text-gray-900 mb-1">Link doesn't open?</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Make sure you're connected to the internal network</li>
+              <li>• Try copying the link and pasting in your browser</li>
+              <li>• Contact IT support if the problem persists</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Alternative - In App Scanner */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center space-x-3 mb-4">
+          <Camera className="h-6 w-6 text-gray-700" />
+          <h3 className="text-lg font-semibold text-gray-900">Alternative: In-App Scanner</h3>
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Coming Soon</span>
+        </div>
+        <p className="text-gray-600 mb-4">
+          If you can't use your phone's camera app, we're working on an in-app scanner as a backup option. 
+          This will allow you to scan QR codes directly within this app.
+        </p>
+        <div className="text-sm text-gray-500">
+          For now, the native camera method works best for all users.
+        </div>
+      </div>
+    </div>
+  );
+};

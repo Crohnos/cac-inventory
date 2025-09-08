@@ -1,157 +1,90 @@
 import express from 'express';
-import morgan from 'morgan';
-import path from 'path';
-import fs from 'fs';
 import cors from 'cors';
-import { initializeDatabase } from './database/setup.js';
-import { errorHandler } from './middleware/index.js';
-import sizeRoutes from './routes/sizeRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
-import detailRoutes from './routes/detailRoutes.js';
-import photoRoutes from './routes/photoRoutes.js';
-import importExportRoutes from './routes/importExportRoutes.js';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { errorHandler } from './middleware/errorHandler.js';
+import { DatabaseConnection } from './database/connection.js';
+import { locationRoutes } from './routes/locationRoutes.js';
+import { itemRoutes } from './routes/itemRoutes.js';
+import { volunteerRoutes } from './routes/volunteerRoutes.js';
+import { checkoutRoutes } from './routes/checkoutRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-console.log(`Setting up Express server on port ${PORT}`);
 
-// Use project directory for uploads - simpler for Render's free tier
-const uploadsDir = path.join(process.cwd(), 'uploads');
-const tempUploadsDir = path.join(uploadsDir, 'temp');
-
-// Log the uploads directory paths
-console.log(`Using uploads directory: ${uploadsDir}`);
-console.log(`Using temp uploads directory: ${tempUploadsDir}`);
-
-// Create directories if they don't exist
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    console.log('Creating uploads directory...');
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  if (!fs.existsSync(tempUploadsDir)) {
-    console.log('Creating temp uploads directory...');
-    fs.mkdirSync(tempUploadsDir, { recursive: true });
-  }
-} catch (err: any) {
-  console.warn(`Warning: Could not create uploads directories: ${err.message}`);
-  console.warn('Will attempt to continue with existing directories...');
-}
-
-// Middleware
-app.use(express.json());
-app.use(morgan('dev')); // Logging middleware
-
-// CORS configuration
-const corsConfig = {
-  origin: function(origin: any, callback: any) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allowed origins
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'https://cac-inventory.onrender.com',
-      process.env.CORS_ORIGIN  // Also allow any origin from env var
-    ].filter(Boolean); // Remove any undefined/empty values
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      console.warn(`Origin ${origin} not allowed by CORS`);
-      callback(null, true); // Temporarily allow all origins in case the domain changes
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+// Security middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
-};
+}));
 
-console.log('CORS enabled for origins:', {
-  allowedOrigins: [
-    'http://localhost:3000',
-    'https://cac-inventory.onrender.com',
-    process.env.CORS_ORIGIN
-  ].filter(Boolean)
-});
+// Logging middleware
+app.use(morgan('combined', {
+  skip: (req, res) => res.statusCode < 400 // Only log errors in production
+}));
 
-app.use(cors(corsConfig));
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the uploads directory
-app.use('/uploads', express.static(uploadsDir));
-
-// API routes
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Rainbow Room API Operational',
-    environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
   });
 });
 
-// Mount routes
-app.use('/api/sizes', sizeRoutes);
-app.use('/api/item-categories', categoryRoutes);
-app.use('/api/item-details', detailRoutes);
-app.use('/api', photoRoutes);
-app.use('/api', importExportRoutes);
+// API routes
+app.use('/api/locations', locationRoutes);
+app.use('/api/items', itemRoutes);
+app.use('/api/volunteer', volunteerRoutes);
+app.use('/api/checkouts', checkoutRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: {
+      message: 'Route not found',
+      path: req.originalUrl,
+      method: req.method
+    }
+  });
+});
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Initialize database and start server
-const startServer = async () => {
-  try {
-    console.log('Starting server initialization...');
-    console.log('Uploads directory:', uploadsDir);
-    console.log('Temp uploads directory:', tempUploadsDir);
-    
-    // Initialize the database
-    console.log('Initializing database...');
-    await initializeDatabase();
-    console.log('Database initialization complete');
-    
-    // Log all API routes
-    console.log('\n===== Registered API Routes =====');
-    app._router.stack.forEach((r: any) => {
-      if (r.route && r.route.path) {
-        console.log(`${Object.keys(r.route.methods)[0].toUpperCase()}\t${r.route.path}`);
-      } else if (r.name === 'router') {
-        r.handle.stack.forEach((sr: any) => {
-          if (sr.route) {
-            const method = Object.keys(sr.route.methods)[0].toUpperCase();
-            console.log(`${method}\t${r.regexp} -> ${sr.route.path}`);
-          }
-        });
-      }
-    });
-    console.log('================================\n');
-    
-    // Start the server
-    const server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`API base URL: http://localhost:${PORT}/api`);
-      console.log('Press Ctrl+C to shut down');
-    });
-    
-    server.on('error', (error: any) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} is already in use. Please close the other application or change the port.`);
-      } else {
-        console.error('Server error:', error);
-      }
-      process.exit(1);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    console.error('Error details:', error);
-    if (error instanceof Error && error.stack) {
-      console.error('Stack trace:', error.stack);
-    }
-    process.exit(1);
-  }
-};
+// Graceful shutdown handler
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  DatabaseConnection.close();
+  process.exit(0);
+});
 
-startServer();
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  DatabaseConnection.close();
+  process.exit(0);
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log('🌈 Rainbow Room Inventory API Server');
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`📡 API base: http://localhost:${PORT}/api`);
+  
+  // Test database connection
+  try {
+    const db = DatabaseConnection.getInstance();
+    const result = db.prepare('SELECT COUNT(*) as count FROM locations').get() as any;
+    console.log(`✅ Database connected (${result.count} locations)`);
+  } catch (error: any) {
+    console.error('❌ Database connection failed:', error.message);
+  }
+});
 
 export default app;
