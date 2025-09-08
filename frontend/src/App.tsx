@@ -6,7 +6,6 @@ import { ScannerPage } from './pages/ScannerPage';
 import { AddItemPage } from './pages/AddItemPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { VolunteerHoursPage } from './pages/VolunteerHoursPage';
-import { QRActionPage } from './pages/QRActionPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
@@ -22,8 +21,6 @@ function App() {
             <Route path="volunteer-hours" element={<VolunteerHoursPage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
-          {/* Mobile QR Action Route - outside dashboard layout for mobile-first experience */}
-          <Route path="mobile/items/:itemId" element={<QRActionPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

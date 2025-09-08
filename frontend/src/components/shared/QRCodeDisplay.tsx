@@ -19,7 +19,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   showActions = false,
   baseUrl = window.location.origin
 }) => {
-  const qrUrl = `${baseUrl}/mobile/items/${itemId}`;
+  const qrUrl = `${baseUrl}/items/${itemId}`;
   
   const sizeMap = {
     small: 128,
