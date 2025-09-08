@@ -8,6 +8,7 @@ import { locationRoutes } from './routes/locationRoutes.js';
 import { itemRoutes } from './routes/itemRoutes.js';
 import { volunteerRoutes } from './routes/volunteerRoutes.js';
 import { checkoutRoutes } from './routes/checkoutRoutes.js';
+import { reportRoutes } from './routes/reportRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,6 +43,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/volunteer', volunteerRoutes);
 app.use('/api/checkouts', checkoutRoutes);
+app.use('/api/reports', reportRoutes);
 
 // 404 handler
 app.use((req, res) => {
