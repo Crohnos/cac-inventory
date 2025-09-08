@@ -1,1 +1,8 @@
-/*    /index.html   200
+# SPA fallback for React Router
+/mobile/*    /index.html   200
+/items/*     /index.html   200
+/add-item    /index.html   200
+/scan        /index.html   200  
+/volunteer-hours /index.html 200
+/reports     /index.html   200
+/*           /index.html   200
