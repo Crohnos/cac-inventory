@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { VolunteerService } from '../services/volunteerService';
+import { VolunteerService } from '../services/volunteerService.js';
 
 export class VolunteerController {
   
