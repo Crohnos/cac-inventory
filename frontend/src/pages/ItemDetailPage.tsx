@@ -1,6 +1,6 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Package, ArrowLeft, RefreshCw, Plus, Minus, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { Package, ArrowLeft, RefreshCw, Plus, Minus, AlertTriangle, ShoppingCart, ArrowRightLeft } from 'lucide-react';
 import { QRCodeDisplay } from '../components/shared/QRCodeDisplay';
 import { itemService } from '../services/itemService';
 import { useLocationStore } from '../stores/locationStore';
@@ -10,10 +10,14 @@ import type { Item, ItemSize } from '../stores/inventoryStore';
 
 export const ItemDetailPage: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>();
+  const [searchParams] = useSearchParams();
+  const isQRMode = searchParams.get('qr') === 'true';
   const [item, setItem] = React.useState<Item | null>(null);
   const [itemSizes, setItemSizes] = React.useState<ItemSize[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = React.useState<'ADD' | 'REMOVE' | 'TRANSFER' | null>(null);
+  const [quantities, setQuantities] = React.useState<Record<number, number>>({});
   
   const { getCurrentLocation } = useLocationStore();
   const { addToast } = useUIStore();
@@ -50,6 +54,97 @@ export const ItemDetailPage: React.FC = () => {
   React.useEffect(() => {
     loadItemData();
   }, [loadItemData]);
+
+  // Initialize quantities for QR mode
+  React.useEffect(() => {
+    if (isQRMode && itemSizes.length > 0) {
+      const initialQuantities: Record<number, number> = {};
+      itemSizes.forEach(size => {
+        if (size.location_id === currentLocation?.location_id) {
+          initialQuantities[size.size_id] = 0;
+        }
+      });
+      setQuantities(initialQuantities);
+    }
+  }, [isQRMode, itemSizes, currentLocation]);
+
+  // Mobile QR handlers
+  const handleQuantityChange = (sizeId: number, value: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [sizeId]: Math.max(0, value)
+    }));
+  };
+
+  const handleMobileAction = async () => {
+    if (!selectedAction || !item || !currentLocation) return;
+    
+    const currentLocationSizes = itemSizes.filter(size => 
+      size.location_id === currentLocation.location_id && quantities[size.size_id] > 0
+    );
+    
+    if (currentLocationSizes.length === 0) {
+      addToast({
+        type: 'warning',
+        title: 'No quantities specified',
+        message: 'Please enter quantities for the items you want to process.'
+      });
+      return;
+    }
+
+    try {
+      if (selectedAction === 'ADD') {
+        for (const size of currentLocationSizes) {
+          await itemService.adjustQuantity(size.size_id, quantities[size.size_id]);
+        }
+        addToast({
+          type: 'success',
+          title: 'Inventory Updated',
+          message: `Added ${currentLocationSizes.length} size(s) to inventory`
+        });
+      } else if (selectedAction === 'REMOVE') {
+        for (const size of currentLocationSizes) {
+          addItem({
+            item_id: item.item_id,
+            size_id: size.size_id,
+            item_name: item.name,
+            size_label: size.size_label,
+            quantity: quantities[size.size_id],
+            location_id: currentLocation.location_id,
+            unit_type: item.unit_type || 'each'
+          });
+        }
+        addToast({
+          type: 'success',
+          title: 'Added to Cart',
+          message: `Added ${currentLocationSizes.length} item(s) to cart for checkout`
+        });
+      } else if (selectedAction === 'TRANSFER') {
+        addToast({
+          type: 'info',
+          title: 'Transfer Feature',
+          message: 'Transfer functionality coming soon!'
+        });
+      }
+      
+      // Reset form
+      setSelectedAction(null);
+      const resetQuantities: Record<number, number> = {};
+      Object.keys(quantities).forEach(key => {
+        resetQuantities[parseInt(key)] = 0;
+      });
+      setQuantities(resetQuantities);
+      
+      // Reload data
+      loadItemData();
+    } catch (error: any) {
+      addToast({
+        type: 'error',
+        title: 'Action Failed',
+        message: error.message
+      });
+    }
+  };
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
   // Group sizes by size_label and location
@@ -163,6 +258,146 @@ export const ItemDetailPage: React.FC = () => {
     );
   }
 
+  // Mobile QR Mode View
+  if (isQRMode) {
+    const currentLocationSizes = itemSizes.filter(size => size.location_id === currentLocation?.location_id);
+    const totalItems = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Mobile Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <div className="flex items-center space-x-3">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{item?.name}</h1>
+                <p className="text-sm text-gray-500">{currentLocation?.name}</p>
+              </div>
+            </div>
+            {item?.description && (
+              <p className="text-gray-600 mt-2 text-sm">{item.description}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="max-w-md mx-auto p-4 space-y-6">
+          {/* Action Selection */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <h2 className="font-semibold text-gray-900 mb-4">What would you like to do?</h2>
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => setSelectedAction('ADD')}
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                  selectedAction === 'ADD'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Plus className="h-6 w-6" />
+                <div className="text-left">
+                  <div className="font-medium">Add to Inventory</div>
+                  <div className="text-sm opacity-75">Restock items</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setSelectedAction('REMOVE')}
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                  selectedAction === 'REMOVE'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Minus className="h-6 w-6" />
+                <div className="text-left">
+                  <div className="font-medium">Remove from Inventory</div>
+                  <div className="text-sm opacity-75">Checkout items</div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setSelectedAction('TRANSFER')}
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                  selectedAction === 'TRANSFER'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <ArrowRightLeft className="h-6 w-6" />
+                <div className="text-left">
+                  <div className="font-medium">Transfer</div>
+                  <div className="text-sm opacity-75">Move between locations</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Size Selection */}
+          {selectedAction && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-semibold text-gray-900 mb-4">Select Quantities</h3>
+              <div className="space-y-3">
+                {currentLocationSizes.map((size) => (
+                  <div key={size.size_id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{size.size_label}</div>
+                      <div className="text-sm text-gray-500">
+                        Current: {size.current_quantity} {item?.unit_type || 'units'}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleQuantityChange(size.size_id, (quantities[size.size_id] || 0) - 1)}
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quantities[size.size_id] || 0}
+                        onChange={(e) => handleQuantityChange(size.size_id, parseInt(e.target.value) || 0)}
+                        className="w-16 text-center border rounded px-2 py-1"
+                      />
+                      <button
+                        onClick={() => handleQuantityChange(size.size_id, (quantities[size.size_id] || 0) + 1)}
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          {selectedAction && totalItems > 0 && (
+            <button
+              onClick={handleMobileAction}
+              className="w-full px-6 py-4 text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+            >
+              {selectedAction === 'ADD' && `Add ${totalItems} Items to Inventory`}
+              {selectedAction === 'REMOVE' && `Remove ${totalItems} Items (Add to Cart)`}
+              {selectedAction === 'TRANSFER' && `Transfer ${totalItems} Items`}
+            </button>
+          )}
+          
+          {/* Back to Full View */}
+          <Link
+            to={`/items/${itemId}`}
+            className="block w-full px-6 py-4 text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 text-center"
+          >
+            View Full Details
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular Desktop View
   return (
     <div className="space-y-6">
       {/* Header */}
