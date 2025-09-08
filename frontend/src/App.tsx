@@ -22,8 +22,8 @@ function App() {
             <Route path="volunteer-hours" element={<VolunteerHoursPage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
-          {/* QR Action Route - outside dashboard layout for mobile-first experience */}
-          <Route path="qr/:qrCode" element={<QRActionPage />} />
+          {/* Mobile QR Action Route - outside dashboard layout for mobile-first experience */}
+          <Route path="mobile/items/:itemId" element={<QRActionPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

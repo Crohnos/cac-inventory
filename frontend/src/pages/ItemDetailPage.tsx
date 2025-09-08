@@ -198,6 +198,7 @@ export const ItemDetailPage: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">QR Code</h3>
               <QRCodeDisplay 
                 qrCode={item.qr_code}
+                itemId={item.item_id}
                 itemName={item.name}
                 size="medium"
                 showActions={true}

@@ -7,7 +7,7 @@ import { useUIStore } from '../stores/uiStore';
 import { itemService } from '../services/itemService';
 
 export const QRActionPage: React.FC = () => {
-  const { qrCode } = useParams<{ qrCode: string }>();
+  const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   
   const [item, setItem] = React.useState<any>(null);
@@ -23,17 +23,17 @@ export const QRActionPage: React.FC = () => {
   
   const currentLocation = getCurrentLocation();
 
-  // Load item data by QR code
+  // Load item data by ID
   React.useEffect(() => {
     const loadItemData = async () => {
-      if (!qrCode) return;
+      if (!itemId) return;
       
       setIsLoading(true);
       setError(null);
       
       try {
-        // Get item by QR code
-        const itemData = await itemService.getItemByQrCode(qrCode);
+        // Get item by ID
+        const itemData = await itemService.getItemById(parseInt(itemId));
         setItem(itemData);
         
         // Get sizes for current location
@@ -57,7 +57,7 @@ export const QRActionPage: React.FC = () => {
     };
 
     loadItemData();
-  }, [qrCode, currentLocation]);
+  }, [itemId, currentLocation]);
 
   const handleQuantityChange = (sizeId: number, value: number) => {
     setQuantities(prev => ({
@@ -147,7 +147,7 @@ export const QRActionPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md w-full">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <h2 className="text-lg font-semibold text-gray-900">Loading Item...</h2>
-          <p className="text-gray-600">QR Code: {qrCode}</p>
+          <p className="text-gray-600">Item ID: {itemId}</p>
         </div>
       </div>
     );
@@ -160,7 +160,7 @@ export const QRActionPage: React.FC = () => {
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Item Not Found</h2>
           <p className="text-gray-600 mb-4">
-            {error || `No item found with QR code: ${qrCode}`}
+            {error || `No item found with ID: ${itemId}`}
           </p>
           <button
             onClick={() => navigate('/')}
