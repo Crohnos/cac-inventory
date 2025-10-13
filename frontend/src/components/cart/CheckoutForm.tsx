@@ -126,6 +126,29 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onBack, onSuccess })
     setIsSubmitting(true);
 
     try {
+      // Filter out invalid items (items with null/undefined size_id)
+      const validItems = items.filter(item => item.size_id !== null && item.size_id !== undefined);
+      const invalidItems = items.filter(item => item.size_id === null || item.size_id === undefined);
+
+      // Warn user about invalid items
+      if (invalidItems.length > 0) {
+        console.warn('Found invalid items in cart (null size_id):', invalidItems);
+        addToast({
+          type: 'warning',
+          title: 'Invalid Items Detected',
+          message: `${invalidItems.length} invalid item(s) found in cart. These will be skipped during checkout.`
+        });
+      }
+
+      if (validItems.length === 0) {
+        addToast({
+          type: 'error',
+          title: 'No Valid Items',
+          message: 'Your cart has no valid items to checkout. Please add items to your cart.'
+        });
+        return;
+      }
+
       const checkoutData = {
         location_id: currentLocation.location_id,
         checkout_date: formData.checkout_date,
@@ -140,7 +163,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onBack, onSuccess })
         alleged_perpetrator_first_name: formData.alleged_perpetrator_first_name || null,
         alleged_perpetrator_last_name: formData.alleged_perpetrator_last_name || null,
         number_of_children: formData.number_of_children,
-        items: items.map(item => ({
+        items: validItems.map(item => ({
           item_id: item.item_id,
           size_id: item.size_id,
           quantity: item.quantity

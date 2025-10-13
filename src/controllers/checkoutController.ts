@@ -178,33 +178,58 @@ export class CheckoutController {
           JOIN items i ON s.item_id = i.item_id
           WHERE s.size_id = ?
         `);
-        
+
+        const getItemInfoNoSizeStmt = CheckoutController.db.prepare(`
+          SELECT name as item_name
+          FROM items
+          WHERE item_id = ?
+        `);
+
         // Process each item
         for (const item of data.items) {
-          // Get item info
-          const itemInfo = getItemInfoStmt.get(item.size_id) as { item_name: string; size_label: string } | undefined;
-          
+          let itemInfo: { item_name: string; size_label: string } | undefined;
+
+          // Get item info based on whether size_id exists
+          if (item.size_id !== null) {
+            itemInfo = getItemInfoStmt.get(item.size_id) as { item_name: string; size_label: string } | undefined;
+          } else {
+            // For items without sizes, get info from items table
+            const itemData = getItemInfoNoSizeStmt.get(item.item_id) as { item_name: string } | undefined;
+            if (itemData) {
+              itemInfo = {
+                item_name: itemData.item_name,
+                size_label: 'N/A'
+              };
+            }
+          }
+
           if (!itemInfo) {
-            throw new Error(`Item not found for size_id: ${item.size_id}`);
+            throw new Error(`Item not found for ${item.size_id !== null ? `size_id: ${item.size_id}` : `item_id: ${item.item_id}`}`);
           }
           
-          // Update inventory (decrement stock)
-          const inventoryResult = updateInventoryStmt.run(item.quantity, item.size_id, item.quantity);
-          
-          if (inventoryResult.changes === 0) {
-            // Check if item exists but has insufficient stock
-            const stockCheck = CheckoutController.db.prepare(
-              'SELECT current_quantity FROM item_sizes WHERE size_id = ?'
-            ).get(item.size_id) as { current_quantity: number } | undefined;
-            
-            if (stockCheck) {
-              throw new Error(
-                `Insufficient stock for ${itemInfo.item_name} (${itemInfo.size_label}). ` +
-                `Requested: ${item.quantity}, Available: ${stockCheck.current_quantity}`
-              );
-            } else {
-              throw new Error(`Item not found: ${itemInfo.item_name} (${itemInfo.size_label})`);
+          // Update inventory (decrement stock) - only if item has a size_id
+          if (item.size_id !== null) {
+            const inventoryResult = updateInventoryStmt.run(item.quantity, item.size_id, item.quantity);
+
+            if (inventoryResult.changes === 0) {
+              // Check if item exists but has insufficient stock
+              const stockCheck = CheckoutController.db.prepare(
+                'SELECT current_quantity FROM item_sizes WHERE size_id = ?'
+              ).get(item.size_id) as { current_quantity: number } | undefined;
+
+              if (stockCheck) {
+                throw new Error(
+                  `Insufficient stock for ${itemInfo.item_name} (${itemInfo.size_label}). ` +
+                  `Requested: ${item.quantity}, Available: ${stockCheck.current_quantity}`
+                );
+              } else {
+                throw new Error(`Item not found: ${itemInfo.item_name} (${itemInfo.size_label})`);
+              }
             }
+          } else {
+            // For items without size_id, we cannot track inventory changes
+            // This should not happen in normal operation - all items should have at least one size entry
+            console.warn(`Warning: Checkout item ${item.item_id} has no size_id. Inventory will not be decremented.`);
           }
           
           // Create checkout item record
