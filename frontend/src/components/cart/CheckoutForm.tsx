@@ -167,8 +167,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onBack, onSuccess })
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      
+      await response.json();
+
       addToast({
         type: 'success',
         title: 'Checkout Complete',
