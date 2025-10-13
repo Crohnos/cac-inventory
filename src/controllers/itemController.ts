@@ -174,7 +174,7 @@ export class ItemController {
 
   static adjustQuantity = asyncHandler(async (req: Request, res: Response) => {
     const sizeId = parseInt(req.params.sizeId);
-    const { adjustment } = req.body;
+    const { adjustment, admin_name, reason } = req.body;
     
     if (isNaN(sizeId)) {
       return res.status(400).json({
@@ -192,12 +192,17 @@ export class ItemController {
       });
     }
 
-    const updatedSize = ItemService.adjustQuantity(sizeId, adjustment);
+    const updatedSize = ItemService.adjustQuantity(
+      sizeId, 
+      adjustment, 
+      admin_name || 'Unknown Admin', 
+      reason || 'Manual inventory correction'
+    );
     
     res.json({
       success: true,
       data: updatedSize,
-      message: `Quantity ${adjustment >= 0 ? 'increased' : 'decreased'} successfully`
+      message: `Manual adjustment completed: ${adjustment >= 0 ? 'added' : 'removed'} ${Math.abs(adjustment)} item(s)`
     });
   });
 }

@@ -10,10 +10,8 @@ import {
   type ColumnFiltersState,
 } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
-import { Package, AlertTriangle, Plus, Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { Package, AlertTriangle, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Item } from '../../stores/inventoryStore';
-import { useLocationStore } from '../../stores/locationStore';
-import { useCartStore } from '../../stores/cartStore';
 
 interface ItemsTableProps {
   items: Item[];
@@ -26,27 +24,6 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
-  
-  const { getCurrentLocation } = useLocationStore();
-  const { addItem } = useCartStore();
-  const currentLocation = getCurrentLocation();
-
-  const handleAddToCart = (item: Item) => {
-    if (!currentLocation) return;
-    
-    // For items without sizes, add directly to cart
-    if (!item.has_sizes) {
-      addItem({
-        item_id: item.item_id,
-        size_id: null,
-        item_name: item.name,
-        size_label: 'N/A',
-        quantity: 1,
-        location_id: currentLocation.location_id,
-        unit_type: item.unit_type
-      });
-    }
-  };
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -110,14 +87,6 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
         );
       },
     }),
-    columnHelper.accessor('storage_location', {
-      header: 'Storage',
-      cell: (info) => (
-        <span className="text-xs text-caccc-grey/70">
-          {info.getValue() || 'Not specified'}
-        </span>
-      ),
-    }),
     columnHelper.display({
       id: 'actions',
       header: 'Quick Actions',
@@ -130,20 +99,10 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
             <Eye className="h-3 w-3" />
             <span>Details</span>
           </Link>
-          
-          {!info.row.original.has_sizes && (
-            <button
-              onClick={() => handleAddToCart(info.row.original)}
-              className="inline-flex items-center space-x-1 px-3 py-2 text-xs bg-caccc-green/10 hover:bg-caccc-green/20 text-caccc-green rounded-lg transition-colors"
-            >
-              <Plus className="h-3 w-3" />
-              <span>Add</span>
-            </button>
-          )}
         </div>
       ),
     }),
-  ], [currentLocation, addItem]);
+  ], []);
 
   const table = useReactTable({
     data: items,
@@ -193,14 +152,8 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
             />
           </div>
           
-          <div className="flex items-center space-x-3">
-            <div className="text-sm text-caccc-grey/70">
-              {table.getFilteredRowModel().rows.length} of {items.length} items
-            </div>
-            <Link to="/add-item" className="btn-primary inline-flex items-center text-sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Item
-            </Link>
+          <div className="text-sm text-caccc-grey/70">
+            {table.getFilteredRowModel().rows.length} of {items.length} items
           </div>
         </div>
       </div>
@@ -256,16 +209,12 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                   <td colSpan={columns.length} className="px-6 py-12 text-center">
                     <Package className="h-12 w-12 text-caccc-grey/40 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-brand mb-2">No items found</h3>
-                    <p className="text-caccc-grey/70 mb-4">
+                    <p className="text-caccc-grey/70">
                       {globalFilter 
                         ? `No items match "${globalFilter}"`
                         : "No inventory items have been added yet"
                       }
                     </p>
-                    <Link to="/add-item" className="btn-primary inline-flex items-center">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Your First Item
-                    </Link>
                   </td>
                 </tr>
               ) : (

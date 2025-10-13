@@ -129,6 +129,36 @@ export class ReportController {
     });
   });
 
+  // GET /api/reports/monthly-movements
+  static getMonthlyInventoryMovements = asyncHandler(async (req: Request, res: Response) => {
+    const month = parseInt(req.query.month as string);
+    const year = parseInt(req.query.year as string);
+    const locationId = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+
+    if (!month || !year || isNaN(month) || isNaN(year)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Month and year parameters are required'
+      });
+    }
+
+    if (month < 1 || month > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Month must be between 1 and 12'
+      });
+    }
+
+    const data = ReportService.getMonthlyInventoryMovements({ month, year, locationId });
+
+    res.json({
+      success: true,
+      data,
+      count: data.length,
+      filters: { month, year, locationId }
+    });
+  });
+
   // GET /api/reports/export/:reportType
   static exportReport = asyncHandler(async (req: Request, res: Response) => {
     const { reportType } = req.params;
@@ -196,6 +226,14 @@ export class ReportController {
         filename = `item-master-${new Date().toISOString().split('T')[0]}`;
         break;
         
+      case 'monthly-movements':
+        const month = parseInt(req.query.month as string) || new Date().getMonth() + 1;
+        const year = parseInt(req.query.year as string) || new Date().getFullYear();
+        const locationId3 = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+        data = ReportService.getMonthlyInventoryMovements({ month, year, locationId: locationId3 });
+        filename = `monthly-movements-${year}-${month.toString().padStart(2, '0')}`;
+        break;
+        
       default:
         return res.status(400).json({
           success: false,
@@ -234,5 +272,31 @@ export class ReportController {
         filename
       });
     }
+  });
+
+  // GET /api/reports/transaction-history/:itemId
+  static getTransactionHistory = asyncHandler(async (req: Request, res: Response) => {
+    const itemId = parseInt(req.params.itemId);
+    const filters = {
+      startDate: req.query.start_date as string,
+      endDate: req.query.end_date as string,
+      locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+    };
+
+    if (!itemId || isNaN(itemId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid item ID'
+      });
+    }
+
+    const data = ReportService.getTransactionHistory(itemId, filters);
+
+    res.json({
+      success: true,
+      data,
+      count: data.length,
+      filters: { itemId, ...filters }
+    });
   });
 }

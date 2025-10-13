@@ -12,7 +12,6 @@ export interface VolunteerSession {
   tasks_performed?: string;
   notes?: string;
   created_at?: string;
-  updated_at?: string;
   location_name?: string;
 }
 

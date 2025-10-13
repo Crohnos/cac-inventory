@@ -74,6 +74,22 @@ export interface ItemMasterRow {
   storage_location: string;
 }
 
+export interface TransactionHistoryRow {
+  transaction_date: string;
+  transaction_type: 'CHECKOUT' | 'ADDITION' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'MANUAL_ADJUSTMENT';
+  location_name: string;
+  quantity: number;
+  size_label?: string;
+  volunteer_name?: string;
+  case_worker?: string;
+  admin_name?: string; // for manual adjustments
+  source?: string; // for additions
+  reason?: string; // for transfers and manual adjustments
+  notes?: string;
+  from_location?: string; // for transfer in
+  to_location?: string; // for transfer out
+}
+
 export interface MonthlySummary {
   total_items_distributed: number;
   new_items_added: number;
@@ -86,6 +102,28 @@ export interface MonthlySummary {
     size_label: string;
     total_quantity: number;
   }>;
+}
+
+export interface MonthlyInventoryMovementRow {
+  item_name: string;
+  size_label: string;
+  location_name: string;
+  unit_type: string;
+  additions_total: number;
+  additions_count: number;
+  checkouts_total: number;
+  checkouts_count: number;
+  transfers_in_total: number;
+  transfers_in_count: number;
+  transfers_out_total: number;
+  transfers_out_count: number;
+  manual_additions_total: number;
+  manual_additions_count: number;
+  manual_subtractions_total: number;
+  manual_subtractions_count: number;
+  net_change: number;
+  starting_quantity?: number;
+  ending_quantity?: number;
 }
 
 // Report filters
@@ -172,6 +210,28 @@ export const reportService = {
     params.append('year', year.toString());
     
     const response = await api.get<ApiResponse<MonthlySummary>>(`/reports/monthly-summary?${params}`);
+    return response.data.data;
+  },
+
+  // Transaction History for specific item
+  async getTransactionHistory(itemId: number, filters: ReportFilters = {}): Promise<TransactionHistoryRow[]> {
+    const params = new URLSearchParams();
+    if (filters.locationId) params.append('location_id', filters.locationId.toString());
+    if (filters.startDate) params.append('start_date', filters.startDate);
+    if (filters.endDate) params.append('end_date', filters.endDate);
+    
+    const response = await api.get<ApiResponse<TransactionHistoryRow[]>>(`/reports/transaction-history/${itemId}?${params}`);
+    return response.data.data;
+  },
+
+  // Monthly Inventory Movements Report
+  async getMonthlyInventoryMovements(month: number, year: number, locationId?: number): Promise<MonthlyInventoryMovementRow[]> {
+    const params = new URLSearchParams();
+    params.append('month', month.toString());
+    params.append('year', year.toString());
+    if (locationId) params.append('location_id', locationId.toString());
+    
+    const response = await api.get<ApiResponse<MonthlyInventoryMovementRow[]>>(`/reports/monthly-movements?${params}`);
     return response.data.data;
   },
 

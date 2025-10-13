@@ -96,6 +96,90 @@ CREATE TABLE IF NOT EXISTS volunteer_sessions (
     FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE RESTRICT
 );
 
+-- Inventory additions table - tracks inventory being added to stock
+CREATE TABLE IF NOT EXISTS inventory_additions (
+    addition_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    location_id INTEGER NOT NULL, -- location where items were added
+    addition_date DATE NOT NULL DEFAULT (date('now')), -- when items were added
+    volunteer_name TEXT NOT NULL, -- who added the inventory
+    source TEXT, -- 'Donation', 'Purchase', 'Transfer In', etc.
+    notes TEXT, -- optional notes about the addition
+    total_items INTEGER NOT NULL DEFAULT 0, -- calculated total items added
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE RESTRICT
+);
+
+-- Inventory addition items table - line items for inventory additions
+CREATE TABLE IF NOT EXISTS inventory_addition_items (
+    addition_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    addition_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    size_id INTEGER, -- nullable if item has no sizes
+    quantity INTEGER NOT NULL,
+    item_name TEXT NOT NULL, -- denormalized for history
+    size_label TEXT, -- denormalized for history
+    FOREIGN KEY (addition_id) REFERENCES inventory_additions(addition_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE RESTRICT,
+    FOREIGN KEY (size_id) REFERENCES item_sizes(size_id) ON DELETE RESTRICT
+);
+
+-- Inventory transfers table - tracks inventory being moved between locations
+CREATE TABLE IF NOT EXISTS inventory_transfers (
+    transfer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_location_id INTEGER NOT NULL, -- source location
+    to_location_id INTEGER NOT NULL, -- destination location
+    transfer_date DATE NOT NULL DEFAULT (date('now')), -- when transfer occurred
+    volunteer_name TEXT NOT NULL, -- who initiated the transfer
+    reason TEXT, -- reason for transfer
+    notes TEXT, -- optional notes about the transfer
+    total_items INTEGER NOT NULL DEFAULT 0, -- calculated total items transferred
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (from_location_id) REFERENCES locations(location_id) ON DELETE RESTRICT,
+    FOREIGN KEY (to_location_id) REFERENCES locations(location_id) ON DELETE RESTRICT,
+    CHECK (from_location_id != to_location_id) -- cannot transfer to same location
+);
+
+-- Inventory transfer items table - line items for inventory transfers
+CREATE TABLE IF NOT EXISTS inventory_transfer_items (
+    transfer_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transfer_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    size_id INTEGER, -- nullable if item has no sizes
+    quantity INTEGER NOT NULL,
+    item_name TEXT NOT NULL, -- denormalized for history
+    size_label TEXT, -- denormalized for history
+    FOREIGN KEY (transfer_id) REFERENCES inventory_transfers(transfer_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE RESTRICT,
+    FOREIGN KEY (size_id) REFERENCES item_sizes(size_id) ON DELETE RESTRICT
+);
+
+-- Manual inventory adjustments table - for admin corrections when physical != system inventory
+CREATE TABLE IF NOT EXISTS inventory_adjustments (
+    adjustment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    location_id INTEGER NOT NULL, -- location where adjustment occurred
+    adjustment_date DATE NOT NULL DEFAULT (date('now')), -- when adjustment was made
+    admin_name TEXT NOT NULL, -- who made the adjustment
+    reason TEXT, -- reason for adjustment (e.g., "Physical count correction", "Damaged items removed")
+    notes TEXT, -- optional notes about the adjustment
+    total_items INTEGER NOT NULL DEFAULT 0, -- calculated total items adjusted (absolute value)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE RESTRICT
+);
+
+-- Manual inventory adjustment items table - line items for manual adjustments
+CREATE TABLE IF NOT EXISTS inventory_adjustment_items (
+    adjustment_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    adjustment_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    size_id INTEGER, -- nullable if item has no sizes
+    quantity_adjustment INTEGER NOT NULL, -- positive for additions, negative for subtractions
+    item_name TEXT NOT NULL, -- denormalized for history
+    size_label TEXT, -- denormalized for history
+    FOREIGN KEY (adjustment_id) REFERENCES inventory_adjustments(adjustment_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE RESTRICT,
+    FOREIGN KEY (size_id) REFERENCES item_sizes(size_id) ON DELETE RESTRICT
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_items_qr_code ON items(qr_code);
 CREATE INDEX IF NOT EXISTS idx_item_sizes_item_id ON item_sizes(item_id);
@@ -108,6 +192,19 @@ CREATE INDEX IF NOT EXISTS idx_checkouts_location ON checkouts(location_id);
 CREATE INDEX IF NOT EXISTS idx_volunteer_sessions_date ON volunteer_sessions(session_date);
 CREATE INDEX IF NOT EXISTS idx_volunteer_sessions_location ON volunteer_sessions(location_id);
 CREATE INDEX IF NOT EXISTS idx_locations_active ON locations(is_active);
+CREATE INDEX IF NOT EXISTS idx_inventory_additions_date ON inventory_additions(addition_date);
+CREATE INDEX IF NOT EXISTS idx_inventory_additions_location ON inventory_additions(location_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_addition_items_addition_id ON inventory_addition_items(addition_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_addition_items_item_id ON inventory_addition_items(item_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_transfers_date ON inventory_transfers(transfer_date);
+CREATE INDEX IF NOT EXISTS idx_inventory_transfers_from_location ON inventory_transfers(from_location_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_transfers_to_location ON inventory_transfers(to_location_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_transfer_items_transfer_id ON inventory_transfer_items(transfer_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_transfer_items_item_id ON inventory_transfer_items(item_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_date ON inventory_adjustments(adjustment_date);
+CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_location ON inventory_adjustments(location_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_adjustment_items_adjustment_id ON inventory_adjustment_items(adjustment_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_adjustment_items_item_id ON inventory_adjustment_items(item_id);
 
 -- Triggers to update the updated_at timestamp
 CREATE TRIGGER IF NOT EXISTS update_items_timestamp 
@@ -157,4 +254,115 @@ CREATE TRIGGER IF NOT EXISTS update_checkout_total_on_delete
             WHERE checkout_id = OLD.checkout_id
         )
         WHERE checkout_id = OLD.checkout_id;
+    END;
+
+-- Triggers to update total_items in inventory_additions table
+CREATE TRIGGER IF NOT EXISTS update_addition_total_on_insert
+    AFTER INSERT ON inventory_addition_items
+    BEGIN
+        UPDATE inventory_additions 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_addition_items 
+            WHERE addition_id = NEW.addition_id
+        )
+        WHERE addition_id = NEW.addition_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_addition_total_on_update
+    AFTER UPDATE ON inventory_addition_items
+    BEGIN
+        UPDATE inventory_additions 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_addition_items 
+            WHERE addition_id = NEW.addition_id
+        )
+        WHERE addition_id = NEW.addition_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_addition_total_on_delete
+    AFTER DELETE ON inventory_addition_items
+    BEGIN
+        UPDATE inventory_additions 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_addition_items 
+            WHERE addition_id = OLD.addition_id
+        )
+        WHERE addition_id = OLD.addition_id;
+    END;
+
+-- Triggers to update total_items in inventory_transfers table
+CREATE TRIGGER IF NOT EXISTS update_transfer_total_on_insert
+    AFTER INSERT ON inventory_transfer_items
+    BEGIN
+        UPDATE inventory_transfers 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_transfer_items 
+            WHERE transfer_id = NEW.transfer_id
+        )
+        WHERE transfer_id = NEW.transfer_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_transfer_total_on_update
+    AFTER UPDATE ON inventory_transfer_items
+    BEGIN
+        UPDATE inventory_transfers 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_transfer_items 
+            WHERE transfer_id = NEW.transfer_id
+        )
+        WHERE transfer_id = NEW.transfer_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_transfer_total_on_delete
+    AFTER DELETE ON inventory_transfer_items
+    BEGIN
+        UPDATE inventory_transfers 
+        SET total_items = (
+            SELECT COALESCE(SUM(quantity), 0) 
+            FROM inventory_transfer_items 
+            WHERE transfer_id = OLD.transfer_id
+        )
+        WHERE transfer_id = OLD.transfer_id;
+    END;
+
+-- Triggers to update total_items in inventory_adjustments table
+CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_insert
+    AFTER INSERT ON inventory_adjustment_items
+    BEGIN
+        UPDATE inventory_adjustments 
+        SET total_items = (
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
+            FROM inventory_adjustment_items 
+            WHERE adjustment_id = NEW.adjustment_id
+        )
+        WHERE adjustment_id = NEW.adjustment_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_update
+    AFTER UPDATE ON inventory_adjustment_items
+    BEGIN
+        UPDATE inventory_adjustments 
+        SET total_items = (
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
+            FROM inventory_adjustment_items 
+            WHERE adjustment_id = NEW.adjustment_id
+        )
+        WHERE adjustment_id = NEW.adjustment_id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_delete
+    AFTER DELETE ON inventory_adjustment_items
+    BEGIN
+        UPDATE inventory_adjustments 
+        SET total_items = (
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
+            FROM inventory_adjustment_items 
+            WHERE adjustment_id = OLD.adjustment_id
+        )
+        WHERE adjustment_id = OLD.adjustment_id;
     END;

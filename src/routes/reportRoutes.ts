@@ -12,6 +12,8 @@ router.get('/volunteer-hours', ReportController.getVolunteerHours);
 router.get('/daily-volunteers', ReportController.getDailyVolunteers);
 router.get('/item-master', ReportController.getItemMaster);
 router.get('/monthly-summary', ReportController.getMonthlySummary);
+router.get('/monthly-movements', ReportController.getMonthlyInventoryMovements);
+router.get('/transaction-history/:itemId', ReportController.getTransactionHistory);
 
 // Export endpoints
 router.get('/export/:reportType', ReportController.exportReport);

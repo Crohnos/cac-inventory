@@ -51,12 +51,11 @@ export const Navbar: React.FC = () => {
         {/* Right: Cart */}
         <button
           onClick={toggleCart}
-          className={`relative p-3 rounded-lg transition-all min-w-12 min-h-12 ${
+          className={`relative p-3 rounded-lg transition-all min-w-12 min-h-12 border-2 ${
             isFlashing 
-              ? 'animate-pulse border' 
-              : 'hover:bg-gray-100'
+              ? 'cart-flash border-caccc-green' 
+              : 'border-transparent hover:bg-gray-100'
           }`}
-          style={isFlashing ? {backgroundColor: 'rgba(69, 178, 73, 0.1)', borderColor: '#45b249'} : {}}
         >
           <ShoppingCart className="h-6 w-6 text-brand" />
           {totalItems > 0 && (

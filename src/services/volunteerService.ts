@@ -11,7 +11,6 @@ export interface VolunteerSession {
   tasks_performed?: string;
   notes?: string;
   created_at?: string;
-  updated_at?: string;
   location_name?: string;
 }
 
@@ -159,7 +158,7 @@ export class VolunteerService {
 
     const stmt = this.db.prepare(`
       UPDATE volunteer_sessions 
-      SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+      SET ${setClause}
       WHERE session_id = ?
     `);
 

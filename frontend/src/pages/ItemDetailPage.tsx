@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { Package, ArrowLeft, RefreshCw, Plus, Minus, AlertTriangle, ShoppingCart, ArrowRightLeft } from 'lucide-react';
+import { Package, ArrowLeft, RefreshCw, Plus, Minus, AlertTriangle, ShoppingCart, ArrowRightLeft, History } from 'lucide-react';
 import { QRCodeDisplay } from '../components/shared/QRCodeDisplay';
+import { TransactionHistory } from '../components/inventory/TransactionHistory';
 import { itemService } from '../services/itemService';
 import { useLocationStore } from '../stores/locationStore';
 import { useUIStore } from '../stores/uiStore';
@@ -18,6 +19,8 @@ export const ItemDetailPage: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [selectedAction, setSelectedAction] = React.useState<'ADD' | 'REMOVE' | 'TRANSFER' | null>(null);
   const [quantities, setQuantities] = React.useState<Record<number, number>>({});
+  const [activeTab, setActiveTab] = React.useState<'inventory' | 'history'>('inventory');
+  const [editingQuantities, setEditingQuantities] = React.useState<Record<number, string>>({});
   
   const { getCurrentLocation } = useLocationStore();
   const { addToast } = useUIStore();
@@ -171,14 +174,50 @@ export const ItemDetailPage: React.FC = () => {
   );
   const lowStockCount = lowStockSizes.length;
 
-  const handleQuantityAdjustment = async (sizeId: number, adjustment: number) => {
+  const handleQuantityUpdate = async (sizeId: number, newQuantity: number) => {
+    const currentSize = itemSizes.find(size => size.size_id === sizeId);
+    if (!currentSize) return;
+
+    const currentQuantity = currentSize.current_quantity;
+    const adjustment = newQuantity - currentQuantity;
+    
+    if (adjustment === 0) {
+      addToast({
+        type: 'info',
+        title: 'No Change',
+        message: 'Quantity is already at the desired value'
+      });
+      return;
+    }
+
     try {
-      await itemService.adjustQuantity(sizeId, adjustment);
-      await loadItemData(); // Refresh data
+      const updatedSize = await itemService.adjustQuantity(
+        sizeId, 
+        adjustment, 
+        'Admin', // TODO: Get actual admin name from user context
+        `Manual quantity adjustment: ${currentQuantity} → ${newQuantity}`
+      );
+      
+      // Update only the specific item size in state instead of reloading all data
+      setItemSizes(prevSizes => 
+        prevSizes.map(size => 
+          size.size_id === sizeId 
+            ? { ...size, current_quantity: updatedSize.current_quantity }
+            : size
+        )
+      );
+      
+      // Clear the editing state
+      setEditingQuantities(prev => {
+        const updated = { ...prev };
+        delete updated[sizeId];
+        return updated;
+      });
+      
       addToast({
         type: 'success',
-        title: 'Quantity updated',
-        message: `${adjustment > 0 ? 'Added' : 'Removed'} ${Math.abs(adjustment)} item(s)`
+        title: 'Quantity Updated',
+        message: `Changed from ${currentQuantity} to ${newQuantity} (${adjustment > 0 ? '+' : ''}${adjustment})`
       });
     } catch (error: any) {
       addToast({
@@ -187,6 +226,37 @@ export const ItemDetailPage: React.FC = () => {
         message: error.message
       });
     }
+  };
+
+  const handleQuantityInputChange = (sizeId: number, value: string) => {
+    setEditingQuantities(prev => ({
+      ...prev,
+      [sizeId]: value
+    }));
+  };
+
+  const handleQuantityInputSubmit = (sizeId: number) => {
+    const inputValue = editingQuantities[sizeId];
+    const newQuantity = parseInt(inputValue);
+    
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      addToast({
+        type: 'error',
+        title: 'Invalid Quantity',
+        message: 'Please enter a valid non-negative number'
+      });
+      return;
+    }
+    
+    handleQuantityUpdate(sizeId, newQuantity);
+  };
+
+  const handleQuantityInputCancel = (sizeId: number) => {
+    setEditingQuantities(prev => {
+      const updated = { ...prev };
+      delete updated[sizeId];
+      return updated;
+    });
   };
 
   const handleAddToCart = (size: ItemSize, quantity: number = 1) => {
@@ -464,11 +534,43 @@ export const ItemDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Inventory Management */}
+        {/* Main Content Area with Tabs */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Inventory Management</h3>
+          <div className="bg-white rounded-lg shadow">
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200">
+              <nav className="flex">
+                <button
+                  onClick={() => setActiveTab('inventory')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors ${
+                    activeTab === 'inventory'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Package className="h-4 w-4 inline mr-2" />
+                  Inventory Management
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors ${
+                    activeTab === 'history'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <History className="h-4 w-4 inline mr-2" />
+                  Transaction History
+                </button>
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+              {activeTab === 'inventory' ? (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Inventory Management</h3>
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -586,24 +688,50 @@ export const ItemDetailPage: React.FC = () => {
                                 {/* Inventory adjustment */}
                                 <div className="flex items-center justify-center space-x-2">
                                   <span className="text-xs text-gray-500">Stock:</span>
-                                  <button
-                                    onClick={() => handleQuantityAdjustment(size.size_id, -1)}
-                                    disabled={size.current_quantity === 0}
-                                    className="w-7 h-7 rounded-full bg-red-100 hover:bg-red-200 disabled:bg-gray-100 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-                                    title="Remove from stock"
-                                  >
-                                    <Minus className="h-3 w-3 text-red-600" />
-                                  </button>
-                                  <span className="text-sm font-medium min-w-[2rem] text-center">
-                                    {size.current_quantity}
-                                  </span>
-                                  <button
-                                    onClick={() => handleQuantityAdjustment(size.size_id, 1)}
-                                    className="w-7 h-7 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center transition-colors"
-                                    title="Add to stock"
-                                  >
-                                    <Plus className="h-3 w-3 text-green-600" />
-                                  </button>
+                                  {editingQuantities[size.size_id!] !== undefined ? (
+                                    // Editing mode - show input field
+                                    <div className="flex items-center space-x-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={editingQuantities[size.size_id!]}
+                                        onChange={(e) => handleQuantityInputChange(size.size_id!, e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleQuantityInputSubmit(size.size_id!);
+                                          } else if (e.key === 'Escape') {
+                                            handleQuantityInputCancel(size.size_id!);
+                                          }
+                                        }}
+                                        className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center"
+                                        placeholder="0"
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={() => handleQuantityInputSubmit(size.size_id!)}
+                                        className="w-6 h-6 rounded bg-green-100 hover:bg-green-200 flex items-center justify-center transition-colors"
+                                        title="Save quantity"
+                                      >
+                                        <span className="text-xs text-green-600">✓</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleQuantityInputCancel(size.size_id!)}
+                                        className="w-6 h-6 rounded bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors"
+                                        title="Cancel edit"
+                                      >
+                                        <span className="text-xs text-red-600">✕</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    // Display mode - show current quantity (clickable)
+                                    <button
+                                      onClick={() => handleQuantityInputChange(size.size_id!, size.current_quantity.toString())}
+                                      className="text-sm font-medium min-w-[2rem] text-center px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                                      title="Click to edit quantity"
+                                    >
+                                      {size.current_quantity}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -613,6 +741,14 @@ export const ItemDetailPage: React.FC = () => {
                     </div>
                   );
                 })
+              )}
+            </div>
+                </div>
+              ) : (
+                <TransactionHistory 
+                  itemId={item.item_id} 
+                  itemName={item.name} 
+                />
               )}
             </div>
           </div>

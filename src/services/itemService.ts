@@ -157,7 +157,7 @@ export class ItemService {
     return updated;
   }
   
-  static adjustQuantity(sizeId: number, adjustment: number): ItemSize {
+  static adjustQuantity(sizeId: number, adjustment: number, adminName: string = 'Unknown', reason: string = 'Manual adjustment'): ItemSize {
     const existing = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize | undefined;
     if (!existing) {
       const error = new Error(`Item size with ID ${sizeId} not found`);
@@ -171,10 +171,70 @@ export class ItemService {
       (error as any).statusCode = 400;
       throw error;
     }
+
+    // Get item details for transaction logging
+    const item = this.getById(existing.item_id);
+    if (!item) {
+      const error = new Error(`Item with ID ${existing.item_id} not found`);
+      (error as any).statusCode = 404;
+      throw error;
+    }
     
-    DatabaseQueries.itemSizes.adjustQuantity.run(adjustment, sizeId);
+    const db = DatabaseQueries.itemSizes.adjustQuantity.database;
     
-    const updated = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize;
-    return updated;
+    try {
+      const transaction = db.transaction(() => {
+        // Update the quantity
+        DatabaseQueries.itemSizes.adjustQuantity.run(adjustment, sizeId);
+        
+        // Log the manual adjustment in the appropriate table
+        const adjustmentResult = db.prepare(`
+          INSERT INTO inventory_adjustments (
+            location_id, 
+            adjustment_date, 
+            admin_name, 
+            reason,
+            notes, 
+            total_items
+          ) 
+          VALUES (?, DATE('now'), ?, ?, ?, ?)
+        `).run(
+          existing.location_id,
+          adminName,
+          reason,
+          `Manual inventory adjustment: ${existing.current_quantity} → ${newQuantity} (${adjustment > 0 ? '+' : ''}${adjustment}) ${existing.size_label} ${item.name}`,
+          Math.abs(adjustment)
+        );
+        
+        const adjustmentId = adjustmentResult.lastInsertRowid;
+        
+        // Log the line item
+        db.prepare(`
+          INSERT INTO inventory_adjustment_items (
+            adjustment_id,
+            item_id,
+            size_id,
+            quantity_adjustment,
+            item_name,
+            size_label
+          )
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          adjustmentId,
+          existing.item_id,
+          sizeId,
+          adjustment, // Can be positive or negative
+          item.name,
+          existing.size_label
+        );
+      });
+      
+      transaction();
+      
+      const updated = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize;
+      return updated;
+    } catch (error: any) {
+      throw error;
+    }
   }
 }

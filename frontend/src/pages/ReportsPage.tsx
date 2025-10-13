@@ -1,8 +1,9 @@
 import React from 'react';
-import { FileText, Download, Filter, Calendar, MapPin, Users, Package, TrendingUp, Clock } from 'lucide-react';
+import { FileText, Download, Filter, Calendar, MapPin, Users, Package, TrendingUp, Clock, BarChart3 } from 'lucide-react';
 import { useLocationStore } from '../stores/locationStore';
 import { useUIStore } from '../stores/uiStore';
 import { reportService, type ReportFilters } from '../services/reportService';
+import { MonthlyMovementsTable } from '../components/reports/MonthlyMovementsTable';
 
 interface ReportConfig {
   id: string;
@@ -13,6 +14,7 @@ interface ReportConfig {
   hasLocationFilter: boolean;
   hasDateFilter: boolean;
   hasLimitFilter?: boolean;
+  hasMonthFilter?: boolean;
 }
 
 const AVAILABLE_REPORTS: ReportConfig[] = [
@@ -43,6 +45,16 @@ const AVAILABLE_REPORTS: ReportConfig[] = [
     category: 'inventory',
     hasLocationFilter: false,
     hasDateFilter: false
+  },
+  {
+    id: 'monthly-movements',
+    name: 'Monthly Inventory Movements',
+    description: 'Comprehensive monthly report of all inventory additions, checkouts, and transfers by item and location',
+    icon: BarChart3,
+    category: 'inventory',
+    hasLocationFilter: true,
+    hasDateFilter: false,
+    hasMonthFilter: true
   },
 
   // Activity Reports
@@ -96,7 +108,8 @@ export const ReportsPage: React.FC = () => {
   const [filters, setFilters] = React.useState<ReportFilters>({});
   const [isLoading, setIsLoading] = React.useState(false);
   const [reportData, setReportData] = React.useState<any[]>([]);
-  const [monthlySummary, setMonthlySummary] = React.useState<any>(null);
+  const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
 
   // Default date range (last 30 days)
   const defaultEndDate = new Date().toISOString().split('T')[0];
@@ -139,6 +152,9 @@ export const ReportsPage: React.FC = () => {
           break;
         case 'item-master':
           data = await reportService.getItemMaster();
+          break;
+        case 'monthly-movements':
+          data = await reportService.getMonthlyInventoryMovements(selectedMonth, selectedYear, filters.locationId);
           break;
       }
 
@@ -187,19 +203,6 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  const loadMonthlySummary = async () => {
-    try {
-      const now = new Date();
-      const summary = await reportService.getMonthlySummary(now.getMonth() + 1, now.getFullYear());
-      setMonthlySummary(summary);
-    } catch (error: any) {
-      console.error('Failed to load monthly summary:', error);
-    }
-  };
-
-  React.useEffect(() => {
-    loadMonthlySummary();
-  }, []);
 
   const categoryColors = {
     inventory: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -215,50 +218,6 @@ export const ReportsPage: React.FC = () => {
         <p className="text-caccc-grey/70">Generate detailed reports about inventory, checkouts, and volunteer activities</p>
       </div>
 
-      {/* Monthly Summary Cards */}
-      {monthlySummary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600" />
-              <div className="ml-3">
-                <p className="text-sm text-gray-600">Items Distributed</p>
-                <p className="text-2xl font-semibold text-gray-900">{monthlySummary.total_items_distributed}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-purple-600" />
-              <div className="ml-3">
-                <p className="text-sm text-gray-600">Volunteer Hours</p>
-                <p className="text-2xl font-semibold text-gray-900">{monthlySummary.total_volunteer_hours}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm text-gray-600">New Items</p>
-                <p className="text-2xl font-semibold text-gray-900">{monthlySummary.new_items_added}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <MapPin className="h-8 w-8 text-orange-600" />
-              <div className="ml-3">
-                <p className="text-sm text-gray-600">Most Active</p>
-                <p className="text-2xl font-semibold text-gray-900 truncate">{monthlySummary.most_active_location}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Report Selection */}
@@ -385,6 +344,50 @@ export const ReportsPage: React.FC = () => {
                       </select>
                     </div>
                   )}
+                  
+                  {selectedReport.hasMonthFilter && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Calendar className="h-4 w-4 inline mr-1" />
+                          Month
+                        </label>
+                        <select
+                          value={selectedMonth}
+                          onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        >
+                          <option value={1}>January</option>
+                          <option value={2}>February</option>
+                          <option value={3}>March</option>
+                          <option value={4}>April</option>
+                          <option value={5}>May</option>
+                          <option value={6}>June</option>
+                          <option value={7}>July</option>
+                          <option value={8}>August</option>
+                          <option value={9}>September</option>
+                          <option value={10}>October</option>
+                          <option value={11}>November</option>
+                          <option value={12}>December</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Year
+                        </label>
+                        <select
+                          value={selectedYear}
+                          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        >
+                          {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex space-x-3 mt-6">
@@ -420,38 +423,42 @@ export const ReportsPage: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          {reportData.length > 0 && Object.keys(reportData[0]).map(key => (
-                            <th
-                              key={key}
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              {key.replace(/_/g, ' ')}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {reportData.slice(0, 10).map((row, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            {Object.values(row).map((value, cellIndex) => (
-                              <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {value as string}
-                              </td>
+                  {selectedReport.id === 'monthly-movements' ? (
+                    <MonthlyMovementsTable data={reportData} />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {reportData.length > 0 && Object.keys(reportData[0]).map(key => (
+                              <th
+                                key={key}
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                              >
+                                {key.replace(/_/g, ' ')}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {reportData.length > 10 && (
-                      <div className="mt-4 text-center text-sm text-gray-500">
-                        Showing first 10 of {reportData.length} records. Export full report for all data.
-                      </div>
-                    )}
-                  </div>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {reportData.slice(0, 10).map((row, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              {Object.values(row).map((value, cellIndex) => (
+                                <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {value as string}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {reportData.length > 10 && (
+                        <div className="mt-4 text-center text-sm text-gray-500">
+                          Showing first 10 of {reportData.length} records. Export full report for all data.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

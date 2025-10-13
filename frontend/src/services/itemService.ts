@@ -47,9 +47,11 @@ export const itemService = {
     return response.data.data;
   },
   
-  async adjustQuantity(sizeId: number, adjustment: number): Promise<ItemSize> {
+  async adjustQuantity(sizeId: number, adjustment: number, adminName?: string, reason?: string): Promise<ItemSize> {
     const response = await api.patch<ApiResponse<ItemSize>>(`/items/sizes/${sizeId}/adjust`, {
-      adjustment
+      adjustment,
+      admin_name: adminName,
+      reason: reason
     });
     return response.data.data;
   },
