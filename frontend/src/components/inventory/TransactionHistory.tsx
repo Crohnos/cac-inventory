@@ -31,10 +31,13 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ itemId, 
 
   const loadTransactionHistory = React.useCallback(async () => {
     setIsLoading(true);
+    console.log('🔍 Loading transaction history for item:', itemId, 'with filters:', filters);
     try {
       const data = await reportService.getTransactionHistory(itemId, filters);
+      console.log('✅ Received transaction data:', data);
       setTransactions(data);
     } catch (error: any) {
+      console.error('❌ Failed to load transaction history:', error);
       addToast({
         type: 'error',
         title: 'Failed to Load History',
