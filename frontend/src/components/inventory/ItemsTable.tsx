@@ -140,26 +140,97 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+      <div className="bg-white rounded-lg shadow p-3 md:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
           <div className="flex-1 max-w-md">
             <input
               type="text"
-              placeholder="Search items by name, description, or QR code..."
+              placeholder="Search items..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-caccc-green focus:border-transparent text-sm text-brand"
+              className="w-full px-4 py-3 md:py-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-caccc-green focus:border-transparent text-sm md:text-base text-brand min-h-[48px]"
             />
           </div>
-          
-          <div className="text-sm text-caccc-grey/70">
+
+          <div className="text-xs md:text-sm text-caccc-grey/70 text-center sm:text-right">
             {table.getFilteredRowModel().rows.length} of {items.length} items
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Mobile Card View (visible only on small screens) */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <Package className="h-12 w-12 text-caccc-grey/40 mx-auto mb-4" />
+            <h3 className="text-base font-medium text-brand mb-2">No items found</h3>
+            <p className="text-sm text-caccc-grey/70">
+              {globalFilter
+                ? `No items match "${globalFilter}"`
+                : "No inventory items have been added yet"
+              }
+            </p>
+          </div>
+        ) : (
+          table.getRowModel().rows.map(row => {
+            const item = row.original;
+            const quantity = item.total_quantity || 0;
+            const minStock = item.min_stock_level || 5;
+            const isLowStock = quantity <= minStock;
+
+            return (
+              <Link
+                key={row.id}
+                to={`/items/${item.item_id}`}
+                className="block bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
+                    <Package className="h-6 w-6 text-caccc-green flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-brand text-base truncate">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-sm text-caccc-grey/70 line-clamp-2 mt-1">{item.description}</p>
+                      )}
+                      <p className="text-xs text-caccc-grey/60 mt-1">QR: {item.qr_code}</p>
+                    </div>
+                  </div>
+                  <div className="text-right ml-3 flex-shrink-0">
+                    <div className="flex items-center space-x-1 mb-1">
+                      {isLowStock && quantity > 0 && (
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      )}
+                      {quantity === 0 && (
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className={`font-semibold text-lg ${
+                        quantity === 0
+                          ? 'text-red-600'
+                          : isLowStock
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
+                      }`}>
+                        {quantity}
+                      </span>
+                    </div>
+                    <p className="text-xs text-caccc-grey/60">{item.unit_type || 'each'}</p>
+                    <p className="text-xs text-brand mt-1">{item.size_count || 1} size{(item.size_count || 1) !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end pt-2 border-t border-gray-100">
+                  <span className="text-xs text-caccc-green font-medium flex items-center">
+                    <Eye className="h-3 w-3 mr-1" />
+                    View Details
+                  </span>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View (hidden on small screens) */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-caccc-grey/5">
@@ -168,7 +239,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                   {headerGroup.headers.map(header => (
                     <th
                       key={header.id}
-                      className="px-6 py-4 text-left text-xs font-medium text-caccc-grey uppercase tracking-wider"
+                      className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-caccc-grey uppercase tracking-wider"
                     >
                       <div
                         className={`flex items-center space-x-1 ${
@@ -181,19 +252,19 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                         </span>
                         {header.column.getCanSort() && (
                           <span className="flex flex-col">
-                            <ChevronUp 
+                            <ChevronUp
                               className={`h-3 w-3 ${
-                                header.column.getIsSorted() === 'asc' 
-                                  ? 'text-caccc-green' 
+                                header.column.getIsSorted() === 'asc'
+                                  ? 'text-caccc-green'
                                   : 'text-caccc-grey/40'
-                              }`} 
+                              }`}
                             />
-                            <ChevronDown 
+                            <ChevronDown
                               className={`h-3 w-3 -mt-1 ${
-                                header.column.getIsSorted() === 'desc' 
-                                  ? 'text-caccc-green' 
+                                header.column.getIsSorted() === 'desc'
+                                  ? 'text-caccc-green'
                                   : 'text-caccc-grey/40'
-                              }`} 
+                              }`}
                             />
                           </span>
                         )}
@@ -210,7 +281,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                     <Package className="h-12 w-12 text-caccc-grey/40 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-brand mb-2">No items found</h3>
                     <p className="text-caccc-grey/70">
-                      {globalFilter 
+                      {globalFilter
                         ? `No items match "${globalFilter}"`
                         : "No inventory items have been added yet"
                       }
@@ -221,7 +292,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                 table.getRowModel().rows.map(row => (
                   <tr key={row.id} className="hover:bg-caccc-green/5 transition-colors">
                     {row.getVisibleCells().map(cell => (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                      <td key={cell.id} className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

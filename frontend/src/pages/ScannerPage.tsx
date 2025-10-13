@@ -4,50 +4,50 @@ import { Link } from 'react-router-dom';
 
 export const ScannerPage: React.FC = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-brand">QR Code Scanning</h1>
-        <p className="text-caccc-grey/70">Learn how to use QR codes with your phone's camera</p>
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-brand">QR Code Scanning</h1>
+        <p className="text-sm md:text-base text-caccc-grey/70 mt-1">Learn how to use QR codes with your phone's camera</p>
       </div>
-      
+
       {/* Primary Method - Native Camera */}
-      <div className="bg-gradient-to-br from-caccc-green/10 to-caccc-green/20 rounded-lg p-8">
-        <div className="text-center mb-6">
-          <Smartphone className="h-16 w-16 text-caccc-green mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-brand mb-2">Recommended Method</h2>
-          <p className="text-lg text-caccc-grey/80">Use your phone's built-in camera app</p>
+      <div className="bg-gradient-to-br from-caccc-green/10 to-caccc-green/20 rounded-lg p-4 md:p-8">
+        <div className="text-center mb-4 md:mb-6">
+          <Smartphone className="h-12 md:h-16 w-12 md:w-16 text-caccc-green mx-auto mb-3 md:mb-4" />
+          <h2 className="text-xl md:text-2xl font-bold text-brand mb-1 md:mb-2">Recommended Method</h2>
+          <p className="text-base md:text-lg text-caccc-grey/80">Use your phone's built-in camera app</p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-white font-bold">1</span>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+          <div className="text-center p-3 md:p-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+              <span className="text-white font-bold text-sm md:text-base">1</span>
             </div>
-            <h3 className="font-semibold mb-2 text-brand">Open Camera</h3>
-            <p className="text-sm text-caccc-grey/70">Open your iPhone or Android camera app</p>
+            <h3 className="font-semibold mb-1 md:mb-2 text-sm md:text-base text-brand">Open Camera</h3>
+            <p className="text-xs md:text-sm text-caccc-grey/70">Open your iPhone or Android camera app</p>
           </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-white font-bold">2</span>
+
+          <div className="text-center p-3 md:p-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+              <span className="text-white font-bold text-sm md:text-base">2</span>
             </div>
-            <h3 className="font-semibold mb-2 text-brand">Point & Scan</h3>
-            <p className="text-sm text-caccc-grey/70">Point camera at the QR code on bins/shelves</p>
+            <h3 className="font-semibold mb-1 md:mb-2 text-sm md:text-base text-brand">Point & Scan</h3>
+            <p className="text-xs md:text-sm text-caccc-grey/70">Point camera at the QR code on bins/shelves</p>
           </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-white font-bold">3</span>
+
+          <div className="text-center p-3 md:p-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-caccc-green rounded-full flex items-center justify-center mx-auto mb-2 md:mb-3">
+              <span className="text-white font-bold text-sm md:text-base">3</span>
             </div>
-            <h3 className="font-semibold mb-2 text-brand">Tap Link</h3>
-            <p className="text-sm text-caccc-grey/70">Tap the notification to open inventory actions</p>
+            <h3 className="font-semibold mb-1 md:mb-2 text-sm md:text-base text-brand">Tap Link</h3>
+            <p className="text-xs md:text-sm text-caccc-grey/70">Tap the notification to open inventory actions</p>
           </div>
         </div>
       </div>
 
       {/* QR Code Management */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-4 md:p-6">
         <div className="flex items-center space-x-3 mb-6">
           <QrCode className="h-6 w-6 text-caccc-green" />
           <h3 className="text-lg font-semibold text-brand">QR Code Management</h3>

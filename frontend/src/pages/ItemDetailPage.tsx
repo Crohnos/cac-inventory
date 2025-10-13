@@ -469,39 +469,40 @@ export const ItemDetailPage: React.FC = () => {
 
   // Regular Desktop View
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link to="/" className="px-6 py-4 text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{item.name}</h1>
-            <p className="text-gray-600">
-              {currentLocation?.name} • {item.description || 'No description'}
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 md:gap-4">
+        <Link
+          to="/"
+          className="px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 flex items-center justify-center w-full sm:w-auto"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words">{item.name}</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1 break-words">
+            {currentLocation?.name} • {item.description || 'No description'}
+          </p>
         </div>
-        
+
         <button
           onClick={loadItemData}
           disabled={isLoading}
-          className="px-6 py-4 text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 flex items-center space-x-2"
+          className="px-4 md:px-6 py-3 md:py-4 text-base md:text-lg font-semibold rounded-lg transition-colors min-h-[48px] bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 flex items-center justify-center space-x-2 w-full sm:w-auto flex-shrink-0"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* QR Code & Item Info */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        <div className="lg:col-span-1 order-2 lg:order-1">
+          <div className="bg-white rounded-lg shadow p-4 md:p-6 space-y-4 md:space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">QR Code</h3>
-              <QRCodeDisplay 
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">QR Code</h3>
+              <QRCodeDisplay
                 qrCode={item.qr_code}
                 itemId={item.item_id}
                 itemName={item.name}
@@ -509,13 +510,13 @@ export const ItemDetailPage: React.FC = () => {
                 showActions={true}
               />
             </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Item Information</h4>
-              <div className="space-y-2 text-sm">
+
+            <div className="border-t pt-3 md:pt-4">
+              <h4 className="font-medium text-gray-900 mb-2 md:mb-3 text-sm md:text-base">Item Information</h4>
+              <div className="space-y-2 text-xs md:text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Storage Location:</span>
-                  <span className="font-medium">{item.storage_location || 'Not specified'}</span>
+                  <span className="font-medium text-right truncate ml-2">{item.storage_location || 'Not specified'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Unit Type:</span>
@@ -535,51 +536,53 @@ export const ItemDetailPage: React.FC = () => {
         </div>
 
         {/* Main Content Area with Tabs */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 order-1 lg:order-2">
           <div className="bg-white rounded-lg shadow">
             {/* Tab Navigation */}
-            <div className="border-b border-gray-200">
-              <nav className="flex">
+            <div className="border-b border-gray-200 overflow-x-auto">
+              <nav className="flex min-w-full">
                 <button
                   onClick={() => setActiveTab('inventory')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeTab === 'inventory'
                       ? 'border-b-2 border-blue-500 text-blue-600'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <Package className="h-4 w-4 inline mr-2" />
-                  Inventory Management
+                  <Package className="h-4 w-4 inline mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Inventory Management</span>
+                  <span className="sm:hidden">Inventory</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                     activeTab === 'history'
                       ? 'border-b-2 border-blue-500 text-blue-600'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <History className="h-4 w-4 inline mr-2" />
-                  Transaction History
+                  <History className="h-4 w-4 inline mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Transaction History</span>
+                  <span className="sm:hidden">History</span>
                 </button>
               </nav>
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-3 sm:p-4 md:p-6">
               {activeTab === 'inventory' ? (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Inventory Management</h3>
-              <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 md:mb-6">
+                    <h3 className="text-base md:text-lg font-semibold text-gray-900">Inventory Management</h3>
+              <div className="flex items-center space-x-3 md:space-x-4 text-xs md:text-sm">
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Total: {totalQuantity}</span>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                  <span className="whitespace-nowrap">Total: {totalQuantity}</span>
                 </div>
                 {lowStockCount > 0 && (
                   <div className="flex items-center space-x-1">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span>Low Stock: {lowStockCount}</span>
+                    <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                    <span className="whitespace-nowrap">Low Stock: {lowStockCount}</span>
                   </div>
                 )}
               </div>
@@ -631,31 +634,31 @@ export const ItemDetailPage: React.FC = () => {
                       </div>
                       
                       {/* Per-location breakdown */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         {sizes
                           .filter(size => !currentLocation || size.location_id === currentLocation.location_id)
                           .map((size) => {
                           const isLowStock = size.current_quantity <= (size.min_stock_level || 5);
                           const isOutOfStock = size.current_quantity === 0;
                           const cartQuantity = getItemCount(item.item_id, size.size_id);
-                          
+
                           return (
                             <div
                               key={size.size_id}
-                              className={`border rounded-lg p-4 ${
-                                isOutOfStock 
-                                  ? 'border-red-300 bg-red-50' 
-                                  : isLowStock 
+                              className={`border rounded-lg p-3 md:p-4 ${
+                                isOutOfStock
+                                  ? 'border-red-300 bg-red-50'
+                                  : isLowStock
                                     ? 'border-yellow-300 bg-yellow-50'
                                     : 'border-gray-300 bg-gray-50'
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-3">
-                                <div>
-                                  <div className="text-xs font-medium text-gray-700 mb-1">
+                              <div className="flex items-center justify-between mb-2 md:mb-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-medium text-gray-700 mb-1 truncate">
                                     {size.location_name || 'Unknown Location'}
                                   </div>
-                                  <div className="text-lg font-semibold text-gray-900">
+                                  <div className="text-base md:text-lg font-semibold text-gray-900">
                                     {size.current_quantity} {item.unit_type || 'units'}
                                   </div>
                                   {cartQuantity > 0 && (
@@ -665,21 +668,21 @@ export const ItemDetailPage: React.FC = () => {
                                   )}
                                 </div>
                                 {(isLowStock || isOutOfStock) && (
-                                  <AlertTriangle 
-                                    className={`h-4 w-4 ${
+                                  <AlertTriangle
+                                    className={`h-4 w-4 flex-shrink-0 ml-2 ${
                                       isOutOfStock ? 'text-red-500' : 'text-yellow-500'
-                                    }`} 
+                                    }`}
                                   />
                                 )}
                               </div>
-                              
+
                               {/* Action buttons */}
                               <div className="space-y-2">
                                 {/* Add to Cart */}
                                 <button
                                   onClick={() => handleAddToCart(size, 1)}
                                   disabled={isOutOfStock}
-                                  className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 disabled:bg-gray-100 disabled:text-gray-500 text-blue-700 rounded-lg transition-colors"
+                                  className="w-full flex items-center justify-center space-x-2 px-3 py-2.5 text-xs md:text-sm bg-blue-100 hover:bg-blue-200 disabled:bg-gray-100 disabled:text-gray-500 text-blue-700 rounded-lg transition-colors min-h-[44px]"
                                 >
                                   <ShoppingCart className="h-4 w-4" />
                                   <span>Add to Cart</span>

@@ -156,11 +156,18 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({ onBack, onSuccess })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete checkout');
+        let errorMessage = 'Failed to complete checkout';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error?.message || errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          // If JSON parsing fails, use default error message
+          console.error('Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
-      await response.json();
+      const result = await response.json();
       
       addToast({
         type: 'success',

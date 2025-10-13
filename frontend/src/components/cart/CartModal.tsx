@@ -23,17 +23,17 @@ export const CartModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       <div className="absolute inset-0 backdrop-blur-sm transition-all duration-300" onClick={hideCart} />
-      
-      <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-xl">
+
+      <div className="absolute right-0 top-0 h-full w-full sm:max-w-2xl lg:max-w-4xl bg-white shadow-xl">
         {showCheckoutForm ? (
-          <CheckoutForm 
+          <CheckoutForm
             onBack={handleBackToCart}
             onSuccess={handleCheckoutSuccess}
           />
         ) : (
           <div className="flex h-full flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-6">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 md:px-6 py-4 md:py-6">
               <div className="flex items-center space-x-2">
                 <ShoppingCart className="h-6 w-6 text-caccc-green" />
                 <h2 className="text-lg font-semibold text-brand">
