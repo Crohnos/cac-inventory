@@ -504,7 +504,6 @@ export const ItemDetailPage: React.FC = () => {
             <div>
               <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">QR Code</h3>
               <QRCodeDisplay
-                qrCode={item.qr_code}
                 itemId={item.item_id}
                 itemName={item.name}
                 size="medium"

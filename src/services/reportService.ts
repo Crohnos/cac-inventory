@@ -65,7 +65,6 @@ export interface ItemMasterRow {
   item_id: number;
   name: string;
   description: string;
-  qr_code: string;
   has_sizes: boolean;
   available_sizes: string;
   unit_type: string;
@@ -372,16 +371,15 @@ export class ReportService {
   // Item Master List
   static getItemMasterList(): ItemMasterRow[] {
     const query = `
-      SELECT 
+      SELECT
         i.item_id,
         i.name,
         i.description,
-        i.qr_code,
         i.has_sizes,
-        CASE 
+        CASE
           WHEN i.has_sizes = 1 THEN (
-            SELECT GROUP_CONCAT(DISTINCT is2.size_label) 
-            FROM item_sizes is2 
+            SELECT GROUP_CONCAT(DISTINCT is2.size_label)
+            FROM item_sizes is2
             WHERE is2.item_id = i.item_id
           )
           ELSE 'N/A'
@@ -391,7 +389,7 @@ export class ReportService {
       FROM items i
       ORDER BY i.name
     `;
-    
+
     const stmt = this.db.prepare(query);
     return stmt.all() as ItemMasterRow[];
   }

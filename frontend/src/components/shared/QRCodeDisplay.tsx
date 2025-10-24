@@ -3,7 +3,6 @@ import QRCode from 'react-qr-code';
 import { Download, Printer } from 'lucide-react';
 
 interface QRCodeDisplayProps {
-  qrCode: string;
   itemId: number;
   itemName: string;
   size?: 'small' | 'medium' | 'large';
@@ -11,15 +10,15 @@ interface QRCodeDisplayProps {
   baseUrl?: string;
 }
 
-export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ 
-  qrCode, 
+export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   itemId,
-  itemName, 
+  itemName,
   size = 'medium',
   showActions = false,
   baseUrl = window.location.origin
 }) => {
   const qrUrl = `${baseUrl}/items/${itemId}?qr=true`;
+  const qrCode = `ITEM-${itemId}`;
   
   const sizeMap = {
     small: 128,

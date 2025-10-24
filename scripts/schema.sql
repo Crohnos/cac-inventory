@@ -18,13 +18,12 @@ CREATE TABLE IF NOT EXISTS locations (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Items table - main inventory categories with QR codes
+-- Items table - main inventory categories
 CREATE TABLE IF NOT EXISTS items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
     storage_location TEXT, -- bin/shelf location within Rainbow Room (e.g., "Bin A-3")
-    qr_code TEXT NOT NULL UNIQUE,
     has_sizes BOOLEAN NOT NULL DEFAULT 0,
     min_stock_level INTEGER DEFAULT 5,
     unit_type TEXT DEFAULT 'each', -- 'each', 'pack', 'box', etc.
@@ -181,7 +180,6 @@ CREATE TABLE IF NOT EXISTS inventory_adjustment_items (
 );
 
 -- Indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_items_qr_code ON items(qr_code);
 CREATE INDEX IF NOT EXISTS idx_item_sizes_item_id ON item_sizes(item_id);
 CREATE INDEX IF NOT EXISTS idx_item_sizes_location_id ON item_sizes(location_id);
 CREATE INDEX IF NOT EXISTS idx_item_sizes_item_location ON item_sizes(item_id, location_id);

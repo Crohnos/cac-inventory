@@ -6,7 +6,6 @@ export interface Item {
   name: string;
   description?: string;
   storage_location?: string;
-  qr_code: string;
   has_sizes: boolean;
   min_stock_level?: number;
   unit_type?: string;
@@ -58,7 +57,6 @@ interface InventoryStore {
   // API Actions
   fetchItems: (locationId?: number) => Promise<void>;
   fetchItemById: (id: number) => Promise<Item>;
-  fetchItemByQrCode: (qrCode: string) => Promise<Item>;
   fetchItemSizes: (itemId: number, locationId?: number) => Promise<ItemSize[]>;
   createItem: (itemData: CreateItemData) => Promise<Item>;
   updateQuantity: (sizeId: number, quantity: number) => Promise<ItemSize>;
@@ -128,31 +126,6 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       return item;
     } catch (error: any) {
       set({ error: error.message || 'Failed to fetch item', isLoading: false });
-      throw error;
-    }
-  },
-
-  fetchItemByQrCode: async (qrCode: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.get<ApiResponse<Item>>(`/items/qr/${qrCode}`);
-      const item = response.data.data;
-
-      // Update items array with fetched item
-      set((state) => {
-        const existingIndex = state.items.findIndex(i => i.item_id === item.item_id);
-        if (existingIndex >= 0) {
-          const updatedItems = [...state.items];
-          updatedItems[existingIndex] = item;
-          return { items: updatedItems, isLoading: false };
-        } else {
-          return { items: [...state.items, item], isLoading: false };
-        }
-      });
-
-      return item;
-    } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch item by QR code', isLoading: false });
       throw error;
     }
   },
@@ -281,20 +254,19 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   // Getters
   getFilteredItems: () => {
     const { items, searchTerm, showLowStock } = get();
-    
+
     return items.filter(item => {
       // Search filter
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const matchesName = item.name.toLowerCase().includes(term);
         const matchesDescription = item.description?.toLowerCase().includes(term);
-        const matchesQrCode = item.qr_code.toLowerCase().includes(term);
-        
-        if (!matchesName && !matchesDescription && !matchesQrCode) {
+
+        if (!matchesName && !matchesDescription) {
           return false;
         }
       }
-      
+
       // Low stock filter
       if (showLowStock) {
         const isLowStock = (item.total_quantity || 0) <= (item.min_stock_level || 5);
@@ -302,7 +274,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
           return false;
         }
       }
-      
+
       return true;
     });
   },

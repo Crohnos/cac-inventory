@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import Database from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
 
 // Database configuration
 const DB_PATH = 'data/inventory.db';
@@ -479,28 +478,26 @@ try {
   console.log(`📍 Found ${locations.length} active locations`);
   
   const insertItem = db.prepare(`
-    INSERT INTO items (name, description, storage_location, qr_code, has_sizes, min_stock_level, unit_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO items (name, description, storage_location, has_sizes, min_stock_level, unit_type)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
-  
+
   const insertItemSize = db.prepare(`
     INSERT INTO item_sizes (item_id, location_id, size_label, current_quantity, min_stock_level, sort_order)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
-  
+
   console.log('📦 Creating comprehensive Rainbow Room inventory...');
-  
+
   // Begin transaction
   const transaction = db.transaction(() => {
     for (let i = 0; i < rainbowRoomItems.length; i++) {
       const itemData = rainbowRoomItems[i];
       // Insert item
-      const qrCode = uuidv4();
       const result = insertItem.run(
         itemData.name,
         itemData.description,
         itemData.storage_location,
-        qrCode,
         itemData.has_sizes ? 1 : 0,
         itemData.min_stock_level,
         'each'

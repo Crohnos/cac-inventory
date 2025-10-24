@@ -1,13 +1,11 @@
 import { DatabaseConnection } from '../database/connection.js';
 import { LocationService } from './locationService.js';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface Item {
   item_id?: number;
   name: string;
   description?: string;
   storage_location?: string;
-  qr_code: string;
   has_sizes: boolean;
   min_stock_level?: number;
   unit_type?: string;
@@ -70,10 +68,6 @@ export class ItemService {
     return result || null;
   }
 
-  static getByQrCode(qrCode: string): Item | null {
-    const result = this.db.prepare('SELECT * FROM items WHERE qr_code = ?').get(qrCode) as Item | undefined;
-    return result || null;
-  }
 
   static getItemSizes(itemId: number): ItemSize[] {
     return this.db.prepare(`
@@ -96,21 +90,17 @@ export class ItemService {
 
   static create(data: CreateItemData): Item {
     const db = this.db;
-    
-    // Generate unique QR code
-    const qrCode = `RR-${uuidv4().substring(0, 8).toUpperCase()}`;
-    
+
     try {
       const transaction = db.transaction(() => {
         // Insert item
         const itemResult = db.prepare(`
-          INSERT INTO items (name, description, storage_location, qr_code, has_sizes, unit_type, min_stock_level)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO items (name, description, storage_location, has_sizes, unit_type, min_stock_level)
+          VALUES (?, ?, ?, ?, ?, ?)
         `).run(
           data.name,
           data.description || null,
           data.storage_location || null,
-          qrCode,
           data.has_sizes ? 1 : 0,
           data.unit_type || 'each',
           data.min_stock_level || 5

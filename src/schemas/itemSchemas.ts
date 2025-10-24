@@ -55,10 +55,6 @@ export const itemSizeParamsSchema = z.object({
   itemId: z.string().regex(/^\d+$/, 'Item ID must be a number')
 });
 
-export const qrCodeParamsSchema = z.object({
-  qrCode: z.string().min(1, 'QR code cannot be empty')
-});
-
 export const itemQuerySchema = z.object({
   location_id: z.string()
     .regex(/^\d+$/, 'Location ID must be a number')

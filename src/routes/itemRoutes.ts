@@ -9,7 +9,6 @@ import {
   itemParamsSchema,
   sizeParamsSchema,
   itemSizeParamsSchema,
-  qrCodeParamsSchema,
   itemQuerySchema
 } from '../schemas/itemSchemas.js';
 
@@ -50,28 +49,6 @@ router.get('/:id',
       return res.status(404).json({
         error: {
           message: `Item with ID ${id} not found`
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      data: item
-    });
-  })
-);
-
-// GET /api/items/qr/:qrCode - Get item by QR code
-router.get('/qr/:qrCode',
-  validateParams(qrCodeParamsSchema),
-  asyncHandler(async (req: Request, res: Response) => {
-    const qrCode = req.params.qrCode;
-    const item = ItemService.getByQrCode(qrCode);
-
-    if (!item) {
-      return res.status(404).json({
-        error: {
-          message: `Item with QR code '${qrCode}' not found`
         }
       });
     }

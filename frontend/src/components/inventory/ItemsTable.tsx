@@ -41,9 +41,6 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                 {info.row.original.description}
               </div>
             )}
-            <div className="text-xs text-caccc-grey/60">
-              QR: {info.row.original.qr_code}
-            </div>
           </div>
         </Link>
       ),
@@ -192,7 +189,6 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ items, isLoading = false
                       {item.description && (
                         <p className="text-sm text-caccc-grey/70 line-clamp-2 mt-1">{item.description}</p>
                       )}
-                      <p className="text-xs text-caccc-grey/60 mt-1">QR: {item.qr_code}</p>
                     </div>
                   </div>
                   <div className="text-right ml-3 flex-shrink-0">

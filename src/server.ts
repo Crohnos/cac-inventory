@@ -1,7 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler.js';
 import { DatabaseConnection } from './database/connection.js';
 import { locationRoutes } from './routes/locationRoutes.js';
@@ -13,17 +11,24 @@ import { reportRoutes } from './routes/reportRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'https://cac-inventory.onrender.com'],
-  credentials: true
-}));
+// Simple CORS for intranet application
+app.use(cors());
 
-// Logging middleware
-app.use(morgan('combined', {
-  skip: (req, res) => res.statusCode < 400 // Only log errors in production
-}));
+// Simple request logging in development
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const status = res.statusCode;
+      const color = status >= 500 ? '\x1b[31m' :  // Red for 5xx
+                    status >= 400 ? '\x1b[33m' :  // Yellow for 4xx
+                    '\x1b[32m';                   // Green otherwise
+      console.log(`${color}${req.method} ${req.path} ${status}\x1b[0m - ${duration}ms`);
+    });
+    next();
+  });
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
