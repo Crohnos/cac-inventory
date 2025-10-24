@@ -2,7 +2,7 @@ import React from 'react';
 import { FileText, Download, Filter, Calendar, MapPin, Users, Package, TrendingUp, Clock, BarChart3 } from 'lucide-react';
 import { useLocationStore } from '../stores/locationStore';
 import { useUIStore } from '../stores/uiStore';
-import { reportService, type ReportFilters } from '../services/reportService';
+import { useReportStore, type ReportFilters } from '../stores/reportStore';
 import { MonthlyMovementsTable } from '../components/reports/MonthlyMovementsTable';
 
 interface ReportConfig {
@@ -102,6 +102,7 @@ const AVAILABLE_REPORTS: ReportConfig[] = [
 export const ReportsPage: React.FC = () => {
   const { locations, getCurrentLocation } = useLocationStore();
   const { addToast } = useUIStore();
+  const { getCurrentInventory, getLowStock, getCheckouts, getPopularItems, getVolunteerHours, getDailyVolunteers, getItemMaster, getMonthlyInventoryMovements, exportReport } = useReportStore();
   const currentLocation = getCurrentLocation();
 
   const [selectedReport, setSelectedReport] = React.useState<ReportConfig | null>(null);
@@ -133,28 +134,28 @@ export const ReportsPage: React.FC = () => {
 
       switch (selectedReport.id) {
         case 'current-inventory':
-          data = await reportService.getCurrentInventory(filters);
+          data = await getCurrentInventory(filters);
           break;
         case 'low-stock':
-          data = await reportService.getLowStock(filters);
+          data = await getLowStock(filters);
           break;
         case 'checkouts':
-          data = await reportService.getCheckouts(filters);
+          data = await getCheckouts(filters);
           break;
         case 'popular-items':
-          data = await reportService.getPopularItems(filters);
+          data = await getPopularItems(filters);
           break;
         case 'volunteer-hours':
-          data = await reportService.getVolunteerHours(filters);
+          data = await getVolunteerHours(filters);
           break;
         case 'daily-volunteers':
-          data = await reportService.getDailyVolunteers(filters);
+          data = await getDailyVolunteers(filters);
           break;
         case 'item-master':
-          data = await reportService.getItemMaster();
+          data = await getItemMaster();
           break;
         case 'monthly-movements':
-          data = await reportService.getMonthlyInventoryMovements(selectedMonth, selectedYear, filters.locationId);
+          data = await getMonthlyInventoryMovements(selectedMonth, selectedYear, filters.locationId);
           break;
       }
 
@@ -188,7 +189,7 @@ export const ReportsPage: React.FC = () => {
     if (!selectedReport) return;
 
     try {
-      await reportService.exportReport(selectedReport.id, filters, format);
+      await exportReport(selectedReport.id, filters, format);
       addToast({
         type: 'success',
         title: 'Export Started',

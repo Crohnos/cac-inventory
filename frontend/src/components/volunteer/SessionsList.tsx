@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, User, MapPin, Calendar, Edit, Trash2, Filter } from 'lucide-react';
-import { volunteerService, type VolunteerSession, type SessionFilters } from '../../services/volunteerService';
+import { useVolunteerStore, type VolunteerSession, type SessionFilters } from '../../stores/volunteerStore';
 import { useLocationStore } from '../../stores/locationStore';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -23,11 +23,12 @@ export const SessionsList: React.FC<SessionsListProps> = ({
   
   const { locations } = useLocationStore();
   const { addToast } = useUIStore();
+  const { getSessions, deleteSession } = useVolunteerStore();
 
   const loadSessions = async () => {
     setIsLoading(true);
     try {
-      const sessionsData = await volunteerService.getSessions(filters);
+      const sessionsData = await getSessions(filters);
       setSessions(sessionsData);
     } catch (error: any) {
       addToast({
@@ -50,7 +51,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({
     }
 
     try {
-      await volunteerService.deleteSession(sessionId);
+      await deleteSession(sessionId);
       addToast({
         type: 'success',
         title: 'Session Deleted',

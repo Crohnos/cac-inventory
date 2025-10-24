@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Clock, User, Calendar } from 'lucide-react';
-import { volunteerService, type VolunteerSession, type CreateVolunteerSessionData } from '../../services/volunteerService';
+import { useVolunteerStore, type VolunteerSession, type CreateVolunteerSessionData } from '../../stores/volunteerStore';
 import { useLocationStore } from '../../stores/locationStore';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -22,6 +22,7 @@ export const EditSessionModal: React.FC<EditSessionModalProps> = ({
   
   const { locations } = useLocationStore();
   const { addToast } = useUIStore();
+  const { updateSession } = useVolunteerStore();
 
   useEffect(() => {
     if (session) {
@@ -95,7 +96,7 @@ export const EditSessionModal: React.FC<EditSessionModalProps> = ({
         updateData.hours_worked = calculateHours(formData.start_time, formData.end_time);
       }
 
-      await volunteerService.updateSession(session.session_id!, updateData);
+      await updateSession(session.session_id!, updateData);
       
       addToast({
         type: 'success',

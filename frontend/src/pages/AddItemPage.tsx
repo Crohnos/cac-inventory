@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Package, Save, X, Tag, FileText, MapPin } from 'lucide-react';
-import { itemService, type CreateItemData } from '../services/itemService';
+import { useInventoryStore, type CreateItemData } from '../stores/inventoryStore';
 import { useUIStore } from '../stores/uiStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,10 +14,11 @@ export const AddItemPage: React.FC = () => {
     min_stock_level: 0,
     unit_type: 'pieces'
   });
-  
+
   const [sizesInput, setSizesInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  const { createItem } = useInventoryStore();
   const { addToast } = useUIStore();
   const navigate = useNavigate();
 
@@ -83,7 +84,7 @@ export const AddItemPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const newItem = await itemService.createItem(formData);
+      const newItem = await createItem(formData);
       
       addToast({
         type: 'success',

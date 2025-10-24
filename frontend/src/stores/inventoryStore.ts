@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../services/api';
 
 export interface Item {
   item_id: number;
@@ -26,29 +27,55 @@ export interface ItemSize {
   location_name?: string;
 }
 
+export interface CreateItemData {
+  name: string;
+  description?: string;
+  storage_location?: string;
+  has_sizes: boolean;
+  sizes?: string[];
+  min_stock_level?: number;
+  unit_type?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  count?: number;
+}
+
 interface InventoryStore {
   items: Item[];
   itemSizes: Record<number, ItemSize[]>; // itemId -> sizes
   isLoading: boolean;
   error: string | null;
-  
+
   // Filters
   searchTerm: string;
   selectedLocation: number | null;
   showLowStock: boolean;
-  
-  // Actions
+
+  // API Actions
+  fetchItems: (locationId?: number) => Promise<void>;
+  fetchItemById: (id: number) => Promise<Item>;
+  fetchItemByQrCode: (qrCode: string) => Promise<Item>;
+  fetchItemSizes: (itemId: number, locationId?: number) => Promise<ItemSize[]>;
+  createItem: (itemData: CreateItemData) => Promise<Item>;
+  updateQuantity: (sizeId: number, quantity: number) => Promise<ItemSize>;
+  adjustQuantity: (sizeId: number, adjustment: number, adminName?: string, reason?: string) => Promise<ItemSize>;
+
+  // Local State Actions
   setItems: (items: Item[]) => void;
   setItemSizes: (itemId: number, sizes: ItemSize[]) => void;
   updateItemQuantity: (sizeId: number, newQuantity: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // Filter actions
   setSearchTerm: (term: string) => void;
   setSelectedLocation: (locationId: number | null) => void;
   setShowLowStock: (show: boolean) => void;
-  
+
   // Getters
   getFilteredItems: () => Item[];
   getItemById: (id: number) => Item | null;
@@ -61,12 +88,148 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   itemSizes: {},
   isLoading: false,
   error: null,
-  
+
   // Filters
   searchTerm: '',
   selectedLocation: null,
   showLowStock: false,
-  
+
+  // API Actions
+  fetchItems: async (locationId?: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const params = locationId ? { location_id: locationId } : {};
+      const response = await api.get<ApiResponse<Item[]>>('/items', { params });
+      set({ items: response.data.data, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to fetch items', isLoading: false });
+      throw error;
+    }
+  },
+
+  fetchItemById: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get<ApiResponse<Item>>(`/items/${id}`);
+      const item = response.data.data;
+
+      // Update items array with fetched item
+      set((state) => {
+        const existingIndex = state.items.findIndex(i => i.item_id === id);
+        if (existingIndex >= 0) {
+          const updatedItems = [...state.items];
+          updatedItems[existingIndex] = item;
+          return { items: updatedItems, isLoading: false };
+        } else {
+          return { items: [...state.items, item], isLoading: false };
+        }
+      });
+
+      return item;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to fetch item', isLoading: false });
+      throw error;
+    }
+  },
+
+  fetchItemByQrCode: async (qrCode: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get<ApiResponse<Item>>(`/items/qr/${qrCode}`);
+      const item = response.data.data;
+
+      // Update items array with fetched item
+      set((state) => {
+        const existingIndex = state.items.findIndex(i => i.item_id === item.item_id);
+        if (existingIndex >= 0) {
+          const updatedItems = [...state.items];
+          updatedItems[existingIndex] = item;
+          return { items: updatedItems, isLoading: false };
+        } else {
+          return { items: [...state.items, item], isLoading: false };
+        }
+      });
+
+      return item;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to fetch item by QR code', isLoading: false });
+      throw error;
+    }
+  },
+
+  fetchItemSizes: async (itemId: number, locationId?: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const params = locationId ? { location_id: locationId } : {};
+      const response = await api.get<ApiResponse<ItemSize[]>>(`/items/${itemId}/sizes`, { params });
+      set((state) => ({
+        itemSizes: { ...state.itemSizes, [itemId]: response.data.data },
+        isLoading: false
+      }));
+      return response.data.data;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to fetch item sizes', isLoading: false });
+      throw error;
+    }
+  },
+
+  createItem: async (itemData: CreateItemData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post<ApiResponse<Item>>('/items', itemData);
+      const newItem = response.data.data;
+
+      set((state) => ({
+        items: [...state.items, newItem],
+        isLoading: false
+      }));
+
+      return newItem;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to create item', isLoading: false });
+      throw error;
+    }
+  },
+
+  updateQuantity: async (sizeId: number, quantity: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.put<ApiResponse<ItemSize>>(`/items/sizes/${sizeId}/quantity`, {
+        quantity
+      });
+      const updatedSize = response.data.data;
+
+      // Update local state
+      get().updateItemQuantity(sizeId, updatedSize.current_quantity);
+      set({ isLoading: false });
+      return updatedSize;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to update quantity', isLoading: false });
+      throw error;
+    }
+  },
+
+  adjustQuantity: async (sizeId: number, adjustment: number, adminName?: string, reason?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.patch<ApiResponse<ItemSize>>(`/items/sizes/${sizeId}/adjust`, {
+        adjustment,
+        admin_name: adminName,
+        reason: reason
+      });
+      const updatedSize = response.data.data;
+
+      // Update local state
+      get().updateItemQuantity(sizeId, updatedSize.current_quantity);
+      set({ isLoading: false });
+      return updatedSize;
+    } catch (error: any) {
+      set({ error: error.message || 'Failed to adjust quantity', isLoading: false });
+      throw error;
+    }
+  },
+
+  // Local State Actions
   setItems: (items) => set({ items, error: null }),
   
   setItemSizes: (itemId, sizes) => set((state) => ({

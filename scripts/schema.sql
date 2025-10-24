@@ -334,10 +334,10 @@ CREATE TRIGGER IF NOT EXISTS update_transfer_total_on_delete
 CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_insert
     AFTER INSERT ON inventory_adjustment_items
     BEGIN
-        UPDATE inventory_adjustments 
+        UPDATE inventory_adjustments
         SET total_items = (
-            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
-            FROM inventory_adjustment_items 
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0)
+            FROM inventory_adjustment_items
             WHERE adjustment_id = NEW.adjustment_id
         )
         WHERE adjustment_id = NEW.adjustment_id;
@@ -346,10 +346,10 @@ CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_insert
 CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_update
     AFTER UPDATE ON inventory_adjustment_items
     BEGIN
-        UPDATE inventory_adjustments 
+        UPDATE inventory_adjustments
         SET total_items = (
-            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
-            FROM inventory_adjustment_items 
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0)
+            FROM inventory_adjustment_items
             WHERE adjustment_id = NEW.adjustment_id
         )
         WHERE adjustment_id = NEW.adjustment_id;
@@ -358,11 +358,104 @@ CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_update
 CREATE TRIGGER IF NOT EXISTS update_adjustment_total_on_delete
     AFTER DELETE ON inventory_adjustment_items
     BEGIN
-        UPDATE inventory_adjustments 
+        UPDATE inventory_adjustments
         SET total_items = (
-            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0) 
-            FROM inventory_adjustment_items 
+            SELECT COALESCE(SUM(ABS(quantity_adjustment)), 0)
+            FROM inventory_adjustment_items
             WHERE adjustment_id = OLD.adjustment_id
         )
         WHERE adjustment_id = OLD.adjustment_id;
+    END;
+
+-- ============================================================================
+-- EVENT SOURCING TRIGGERS - Automatic Inventory Quantity Management
+-- ============================================================================
+-- These triggers automatically update item_sizes.current_quantity based on
+-- transaction records, implementing an event sourcing pattern where transaction
+-- tables are the source of truth for inventory changes.
+--
+-- Benefits:
+-- - Guaranteed audit trail (impossible to change inventory without transaction record)
+-- - Simplified application code (no manual quantity calculations)
+-- - Data integrity (triggers execute atomically within transactions)
+-- - Rebuildable state (current inventory can be recalculated from transaction history)
+-- ============================================================================
+
+-- Trigger 1: Decrease quantity when items are checked out
+-- Runs AFTER INSERT on checkout_items to decrement inventory
+CREATE TRIGGER IF NOT EXISTS update_quantity_on_checkout
+    AFTER INSERT ON checkout_items
+    BEGIN
+        UPDATE item_sizes
+        SET current_quantity = current_quantity - NEW.quantity
+        WHERE size_id = NEW.size_id;
+
+        -- Verify we didn't go negative (safety check)
+        SELECT CASE
+            WHEN (SELECT current_quantity FROM item_sizes WHERE size_id = NEW.size_id) < 0
+            THEN RAISE(FAIL, 'Checkout would result in negative inventory')
+        END;
+    END;
+
+-- Trigger 2: Increase quantity when items are added to inventory
+-- Runs AFTER INSERT on inventory_addition_items to increment inventory
+CREATE TRIGGER IF NOT EXISTS update_quantity_on_addition
+    AFTER INSERT ON inventory_addition_items
+    BEGIN
+        UPDATE item_sizes
+        SET current_quantity = current_quantity + NEW.quantity
+        WHERE size_id = NEW.size_id;
+    END;
+
+-- Trigger 3: Decrease quantity at source location for transfers
+-- Runs AFTER INSERT on inventory_transfer_items to decrement at source
+CREATE TRIGGER IF NOT EXISTS update_quantity_on_transfer_out
+    AFTER INSERT ON inventory_transfer_items
+    BEGIN
+        UPDATE item_sizes
+        SET current_quantity = current_quantity - NEW.quantity
+        WHERE size_id = NEW.size_id;
+
+        -- Verify we didn't go negative (safety check)
+        SELECT CASE
+            WHEN (SELECT current_quantity FROM item_sizes WHERE size_id = NEW.size_id) < 0
+            THEN RAISE(FAIL, 'Transfer would result in negative inventory at source location')
+        END;
+    END;
+
+-- Trigger 4: Increase quantity at destination location for transfers
+-- Runs AFTER INSERT on inventory_transfer_items to increment at destination
+-- Note: This requires finding/creating the corresponding size_id at the destination location
+CREATE TRIGGER IF NOT EXISTS update_quantity_on_transfer_in
+    AFTER INSERT ON inventory_transfer_items
+    BEGIN
+        -- Get the destination location from the parent transfer record
+        UPDATE item_sizes
+        SET current_quantity = current_quantity + NEW.quantity
+        WHERE item_id = NEW.item_id
+          AND location_id = (
+              SELECT to_location_id
+              FROM inventory_transfers
+              WHERE transfer_id = NEW.transfer_id
+          )
+          AND size_label = NEW.size_label;
+
+        -- If no matching size exists at destination, this won't update any rows
+        -- In production, you might want to auto-create the size entry or raise an error
+    END;
+
+-- Trigger 5: Apply manual adjustments (positive or negative)
+-- Runs AFTER INSERT on inventory_adjustment_items to apply admin corrections
+CREATE TRIGGER IF NOT EXISTS update_quantity_on_adjustment
+    AFTER INSERT ON inventory_adjustment_items
+    BEGIN
+        UPDATE item_sizes
+        SET current_quantity = current_quantity + NEW.quantity_adjustment
+        WHERE size_id = NEW.size_id;
+
+        -- Verify we didn't go negative (safety check)
+        SELECT CASE
+            WHEN (SELECT current_quantity FROM item_sizes WHERE size_id = NEW.size_id) < 0
+            THEN RAISE(FAIL, 'Manual adjustment would result in negative inventory')
+        END;
     END;

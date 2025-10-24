@@ -1,4 +1,4 @@
-import { DatabaseQueries } from '../database/queries.js';
+import { DatabaseConnection } from '../database/connection.js';
 import { LocationService } from './locationService.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,34 +39,63 @@ export interface CreateItemData {
 }
 
 export class ItemService {
+  private static db = DatabaseConnection.getInstance();
+
   static getAllItems(): Item[] {
-    return DatabaseQueries.items.getAll.all() as Item[];
+    return this.db.prepare(`
+      SELECT i.*,
+             COUNT(DISTINCT is2.size_id) as size_count,
+             SUM(is2.current_quantity) as total_quantity
+      FROM items i
+      LEFT JOIN item_sizes is2 ON i.item_id = is2.item_id
+      GROUP BY i.item_id
+      ORDER BY i.name
+    `).all() as Item[];
   }
-  
+
   static getItemsByLocation(locationId: number): Item[] {
-    return DatabaseQueries.items.getByLocation.all(locationId) as Item[];
+    return this.db.prepare(`
+      SELECT i.*,
+             COUNT(DISTINCT is2.size_id) as size_count,
+             SUM(is2.current_quantity) as total_quantity
+      FROM items i
+      LEFT JOIN item_sizes is2 ON i.item_id = is2.item_id AND is2.location_id = ?
+      GROUP BY i.item_id
+      ORDER BY i.name
+    `).all(locationId) as Item[];
   }
-  
+
   static getById(id: number): Item | null {
-    const result = DatabaseQueries.items.getById.get(id) as Item | undefined;
+    const result = this.db.prepare('SELECT * FROM items WHERE item_id = ?').get(id) as Item | undefined;
     return result || null;
   }
-  
+
   static getByQrCode(qrCode: string): Item | null {
-    const result = DatabaseQueries.items.getByQrCode.get(qrCode) as Item | undefined;
+    const result = this.db.prepare('SELECT * FROM items WHERE qr_code = ?').get(qrCode) as Item | undefined;
     return result || null;
   }
-  
+
   static getItemSizes(itemId: number): ItemSize[] {
-    return DatabaseQueries.itemSizes.getByItem.all(itemId) as ItemSize[];
+    return this.db.prepare(`
+      SELECT is2.*, l.name as location_name
+      FROM item_sizes is2
+      JOIN locations l ON is2.location_id = l.location_id
+      WHERE is2.item_id = ?
+      ORDER BY l.name, is2.sort_order
+    `).all(itemId) as ItemSize[];
   }
-  
+
   static getItemSizesByLocation(itemId: number, locationId: number): ItemSize[] {
-    return DatabaseQueries.itemSizes.getByItemAndLocation.all(itemId, locationId) as ItemSize[];
+    return this.db.prepare(`
+      SELECT is2.*
+      FROM item_sizes is2
+      WHERE is2.item_id = ? AND is2.location_id = ?
+      ORDER BY is2.sort_order
+    `).all(itemId, locationId) as ItemSize[];
   }
-  
+
   static create(data: CreateItemData): Item {
-    const db = DatabaseQueries.items.create.database;
+    const db = this.db;
     
     // Generate unique QR code
     const qrCode = `RR-${uuidv4().substring(0, 8).toUpperCase()}`;
@@ -74,7 +103,10 @@ export class ItemService {
     try {
       const transaction = db.transaction(() => {
         // Insert item
-        const itemResult = DatabaseQueries.items.create.run(
+        const itemResult = db.prepare(`
+          INSERT INTO items (name, description, storage_location, qr_code, has_sizes, unit_type, min_stock_level)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
           data.name,
           data.description || null,
           data.storage_location || null,
@@ -83,16 +115,20 @@ export class ItemService {
           data.unit_type || 'each',
           data.min_stock_level || 5
         );
-        
+
         const itemId = itemResult.lastInsertRowid as number;
-        
+
         // Insert sizes for each location if has_sizes
         if (data.has_sizes && data.sizes && data.sizes.length > 0) {
           const locations = LocationService.getActiveLocations();
-          
+          const createSizeStmt = db.prepare(`
+            INSERT INTO item_sizes (item_id, location_id, size_label, current_quantity, sort_order)
+            VALUES (?, ?, ?, ?, ?)
+          `);
+
           for (const location of locations) {
             for (let i = 0; i < data.sizes!.length; i++) {
-              DatabaseQueries.itemSizes.create.run(
+              createSizeStmt.run(
                 itemId,
                 location.location_id,
                 data.sizes![i],
@@ -104,9 +140,13 @@ export class ItemService {
         } else {
           // Create single "N/A" size record for each location
           const locations = LocationService.getActiveLocations();
-          
+          const createSizeStmt = db.prepare(`
+            INSERT INTO item_sizes (item_id, location_id, size_label, current_quantity, sort_order)
+            VALUES (?, ?, ?, ?, ?)
+          `);
+
           for (const location of locations) {
-            DatabaseQueries.itemSizes.create.run(
+            createSizeStmt.run(
               itemId,
               location.location_id!,
               'N/A',
@@ -115,7 +155,7 @@ export class ItemService {
             );
           }
         }
-        
+
         return itemId;
       });
       
@@ -138,33 +178,37 @@ export class ItemService {
   }
   
   static updateQuantity(sizeId: number, quantity: number): ItemSize {
-    const existing = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize | undefined;
+    const existing = this.db.prepare('SELECT * FROM item_sizes WHERE size_id = ?').get(sizeId) as ItemSize | undefined;
     if (!existing) {
       const error = new Error(`Item size with ID ${sizeId} not found`);
       (error as any).statusCode = 404;
       throw error;
     }
-    
+
     if (quantity < 0) {
       const error = new Error('Quantity cannot be negative');
       (error as any).statusCode = 400;
       throw error;
     }
-    
-    DatabaseQueries.itemSizes.updateQuantity.run(quantity, sizeId);
-    
-    const updated = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize;
+
+    this.db.prepare(`
+      UPDATE item_sizes
+      SET current_quantity = ?
+      WHERE size_id = ?
+    `).run(quantity, sizeId);
+
+    const updated = this.db.prepare('SELECT * FROM item_sizes WHERE size_id = ?').get(sizeId) as ItemSize;
     return updated;
   }
-  
+
   static adjustQuantity(sizeId: number, adjustment: number, adminName: string = 'Unknown', reason: string = 'Manual adjustment'): ItemSize {
-    const existing = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize | undefined;
+    const existing = this.db.prepare('SELECT * FROM item_sizes WHERE size_id = ?').get(sizeId) as ItemSize | undefined;
     if (!existing) {
       const error = new Error(`Item size with ID ${sizeId} not found`);
       (error as any).statusCode = 404;
       throw error;
     }
-    
+
     const newQuantity = existing.current_quantity + adjustment;
     if (newQuantity < 0) {
       const error = new Error(`Insufficient quantity. Current: ${existing.current_quantity}, Requested adjustment: ${adjustment}`);
@@ -179,24 +223,24 @@ export class ItemService {
       (error as any).statusCode = 404;
       throw error;
     }
-    
-    const db = DatabaseQueries.itemSizes.adjustQuantity.database;
-    
+
+    const db = this.db;
+
     try {
       const transaction = db.transaction(() => {
-        // Update the quantity
-        DatabaseQueries.itemSizes.adjustQuantity.run(adjustment, sizeId);
-        
+        // NOTE: Inventory quantities are now automatically updated by database triggers
+        // The update_quantity_on_adjustment trigger will update inventory when inventory_adjustment_items are inserted
+
         // Log the manual adjustment in the appropriate table
         const adjustmentResult = db.prepare(`
           INSERT INTO inventory_adjustments (
-            location_id, 
-            adjustment_date, 
-            admin_name, 
+            location_id,
+            adjustment_date,
+            admin_name,
             reason,
-            notes, 
+            notes,
             total_items
-          ) 
+          )
           VALUES (?, DATE('now'), ?, ?, ?, ?)
         `).run(
           existing.location_id,
@@ -205,10 +249,11 @@ export class ItemService {
           `Manual inventory adjustment: ${existing.current_quantity} → ${newQuantity} (${adjustment > 0 ? '+' : ''}${adjustment}) ${existing.size_label} ${item.name}`,
           Math.abs(adjustment)
         );
-        
+
         const adjustmentId = adjustmentResult.lastInsertRowid;
-        
+
         // Log the line item
+        // The database trigger will automatically update the quantity when this record is inserted
         db.prepare(`
           INSERT INTO inventory_adjustment_items (
             adjustment_id,
@@ -228,10 +273,10 @@ export class ItemService {
           existing.size_label
         );
       });
-      
+
       transaction();
-      
-      const updated = DatabaseQueries.itemSizes.getById.get(sizeId) as ItemSize;
+
+      const updated = this.db.prepare('SELECT * FROM item_sizes WHERE size_id = ?').get(sizeId) as ItemSize;
       return updated;
     } catch (error: any) {
       throw error;

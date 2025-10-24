@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Minus, ArrowRight, ArrowLeft, Settings, Package } from 'lucide-react';
-import type { MonthlyInventoryMovementRow } from '../../services/reportService';
+import type { MonthlyInventoryMovementRow } from '../../stores/reportStore';
 
 interface MonthlyMovementsTableProps {
   data: MonthlyInventoryMovementRow[];

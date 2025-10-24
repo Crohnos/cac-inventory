@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, User, Package, ArrowLeft, ArrowRight, Plus, Minus, RefreshCw, Filter, Settings } from 'lucide-react';
-import { reportService, type TransactionHistoryRow, type ReportFilters } from '../../services/reportService';
+import { useReportStore, type TransactionHistoryRow, type ReportFilters } from '../../stores/reportStore';
 import { useLocationStore } from '../../stores/locationStore';
 import { useUIStore } from '../../stores/uiStore';
 
@@ -17,6 +17,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ itemId, 
   
   const { locations } = useLocationStore();
   const { addToast } = useUIStore();
+  const { getTransactionHistory } = useReportStore();
 
   // Default date range (last 90 days)
   const defaultEndDate = new Date().toISOString().split('T')[0];
@@ -33,7 +34,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ itemId, 
     setIsLoading(true);
     console.log('🔍 Loading transaction history for item:', itemId, 'with filters:', filters);
     try {
-      const data = await reportService.getTransactionHistory(itemId, filters);
+      const data = await getTransactionHistory(itemId, filters);
       console.log('✅ Received transaction data:', data);
       setTransactions(data);
     } catch (error: any) {

@@ -1,21 +1,303 @@
-import { Router } from 'express';
-import { ReportController } from '../controllers/reportController.js';
+import { Router, Request, Response } from 'express';
+import { ReportService } from '../services/reportService.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-// Report data endpoints
-router.get('/current-inventory', ReportController.getCurrentInventory);
-router.get('/low-stock', ReportController.getLowStock);
-router.get('/checkouts', ReportController.getCheckouts);
-router.get('/popular-items', ReportController.getPopularItems);
-router.get('/volunteer-hours', ReportController.getVolunteerHours);
-router.get('/daily-volunteers', ReportController.getDailyVolunteers);
-router.get('/item-master', ReportController.getItemMaster);
-router.get('/monthly-summary', ReportController.getMonthlySummary);
-router.get('/monthly-movements', ReportController.getMonthlyInventoryMovements);
-router.get('/transaction-history/:itemId', ReportController.getTransactionHistory);
+// GET /api/reports/current-inventory
+router.get('/current-inventory', asyncHandler(async (req: Request, res: Response) => {
+  const locationId = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
 
-// Export endpoints
-router.get('/export/:reportType', ReportController.exportReport);
+  const data = ReportService.getCurrentInventory(locationId);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters: { locationId }
+  });
+}));
+
+// GET /api/reports/low-stock
+router.get('/low-stock', asyncHandler(async (req: Request, res: Response) => {
+  const locationId = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+
+  const data = ReportService.getLowStockItems(locationId);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters: { locationId }
+  });
+}));
+
+// GET /api/reports/checkouts
+router.get('/checkouts', asyncHandler(async (req: Request, res: Response) => {
+  const filters = {
+    startDate: req.query.start_date as string,
+    endDate: req.query.end_date as string,
+    locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+  };
+
+  const data = ReportService.getCheckoutReport(filters);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters
+  });
+}));
+
+// GET /api/reports/popular-items
+router.get('/popular-items', asyncHandler(async (req: Request, res: Response) => {
+  const filters = {
+    startDate: req.query.start_date as string,
+    endDate: req.query.end_date as string,
+    limit: req.query.limit ? parseInt(req.query.limit as string) : undefined
+  };
+
+  const data = ReportService.getPopularItems(filters);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters
+  });
+}));
+
+// GET /api/reports/volunteer-hours
+router.get('/volunteer-hours', asyncHandler(async (req: Request, res: Response) => {
+  const filters = {
+    startDate: req.query.start_date as string,
+    endDate: req.query.end_date as string,
+    locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+  };
+
+  const data = ReportService.getVolunteerHoursSummary(filters);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters
+  });
+}));
+
+// GET /api/reports/daily-volunteers
+router.get('/daily-volunteers', asyncHandler(async (req: Request, res: Response) => {
+  const filters = {
+    startDate: req.query.start_date as string,
+    endDate: req.query.end_date as string,
+    locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+  };
+
+  const data = ReportService.getDailyVolunteerReport(filters);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters
+  });
+}));
+
+// GET /api/reports/item-master
+router.get('/item-master', asyncHandler(async (req: Request, res: Response) => {
+  const data = ReportService.getItemMasterList();
+
+  res.json({
+    success: true,
+    data,
+    count: data.length
+  });
+}));
+
+// GET /api/reports/monthly-summary
+router.get('/monthly-summary', asyncHandler(async (req: Request, res: Response) => {
+  const month = parseInt(req.query.month as string) || new Date().getMonth() + 1;
+  const year = parseInt(req.query.year as string) || new Date().getFullYear();
+
+  const data = ReportService.getMonthlySummary(month, year);
+
+  res.json({
+    success: true,
+    data,
+    filters: { month, year }
+  });
+}));
+
+// GET /api/reports/monthly-movements
+router.get('/monthly-movements', asyncHandler(async (req: Request, res: Response) => {
+  const month = parseInt(req.query.month as string);
+  const year = parseInt(req.query.year as string);
+  const locationId = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+
+  if (!month || !year || isNaN(month) || isNaN(year)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Month and year parameters are required'
+    });
+  }
+
+  if (month < 1 || month > 12) {
+    return res.status(400).json({
+      success: false,
+      error: 'Month must be between 1 and 12'
+    });
+  }
+
+  const data = ReportService.getMonthlyInventoryMovements({ month, year, locationId });
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters: { month, year, locationId }
+  });
+}));
+
+// GET /api/reports/transaction-history/:itemId
+router.get('/transaction-history/:itemId', asyncHandler(async (req: Request, res: Response) => {
+  const itemId = parseInt(req.params.itemId);
+  const filters = {
+    startDate: req.query.start_date as string,
+    endDate: req.query.end_date as string,
+    locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+  };
+
+  if (!itemId || isNaN(itemId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid item ID'
+    });
+  }
+
+  const data = ReportService.getTransactionHistory(itemId, filters);
+
+  res.json({
+    success: true,
+    data,
+    count: data.length,
+    filters: { itemId, ...filters }
+  });
+}));
+
+// GET /api/reports/export/:reportType
+router.get('/export/:reportType', asyncHandler(async (req: Request, res: Response) => {
+  const { reportType } = req.params;
+  const { format = 'csv' } = req.query;
+
+  let data: any[] = [];
+  let filename = '';
+
+  // Get the appropriate report data
+  switch (reportType) {
+    case 'current-inventory':
+      const locationId1 = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+      data = ReportService.getCurrentInventory(locationId1);
+      filename = `current-inventory-${new Date().toISOString().split('T')[0]}`;
+      break;
+
+    case 'low-stock':
+      const locationId2 = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+      data = ReportService.getLowStockItems(locationId2);
+      filename = `low-stock-${new Date().toISOString().split('T')[0]}`;
+      break;
+
+    case 'checkouts':
+      const checkoutFilters = {
+        startDate: req.query.start_date as string,
+        endDate: req.query.end_date as string,
+        locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+      };
+      data = ReportService.getCheckoutReport(checkoutFilters);
+      filename = `checkouts-${checkoutFilters.startDate || 'all'}-to-${checkoutFilters.endDate || 'all'}`;
+      break;
+
+    case 'popular-items':
+      const popularFilters = {
+        startDate: req.query.start_date as string,
+        endDate: req.query.end_date as string,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined
+      };
+      data = ReportService.getPopularItems(popularFilters);
+      filename = `popular-items-${popularFilters.startDate || 'all'}-to-${popularFilters.endDate || 'all'}`;
+      break;
+
+    case 'volunteer-hours':
+      const volunteerFilters = {
+        startDate: req.query.start_date as string,
+        endDate: req.query.end_date as string,
+        locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+      };
+      data = ReportService.getVolunteerHoursSummary(volunteerFilters);
+      filename = `volunteer-hours-${volunteerFilters.startDate || 'all'}-to-${volunteerFilters.endDate || 'all'}`;
+      break;
+
+    case 'daily-volunteers':
+      const dailyFilters = {
+        startDate: req.query.start_date as string,
+        endDate: req.query.end_date as string,
+        locationId: req.query.location_id ? parseInt(req.query.location_id as string) : undefined
+      };
+      data = ReportService.getDailyVolunteerReport(dailyFilters);
+      filename = `daily-volunteers-${dailyFilters.startDate || 'all'}-to-${dailyFilters.endDate || 'all'}`;
+      break;
+
+    case 'item-master':
+      data = ReportService.getItemMasterList();
+      filename = `item-master-${new Date().toISOString().split('T')[0]}`;
+      break;
+
+    case 'monthly-movements':
+      const month = parseInt(req.query.month as string) || new Date().getMonth() + 1;
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      const locationId3 = req.query.location_id ? parseInt(req.query.location_id as string) : undefined;
+      data = ReportService.getMonthlyInventoryMovements({ month, year, locationId: locationId3 });
+      filename = `monthly-movements-${year}-${month.toString().padStart(2, '0')}`;
+      break;
+
+    default:
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid report type'
+      });
+  }
+
+  if (data.length === 0) {
+    return res.status(404).json({
+      success: false,
+      error: 'No data found for the specified criteria'
+    });
+  }
+
+  if (format === 'csv') {
+    // Generate CSV
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row =>
+      Object.values(row).map(value =>
+        typeof value === 'string' && value.includes(',')
+          ? `"${value}"`
+          : value
+      ).join(',')
+    );
+    const csv = [headers, ...rows].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+    res.send(csv);
+  } else {
+    // Return JSON for other formats
+    res.json({
+      success: true,
+      data,
+      count: data.length,
+      filename
+    });
+  }
+}));
 
 export { router as reportRoutes };

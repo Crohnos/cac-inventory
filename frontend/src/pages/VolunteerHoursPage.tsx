@@ -5,7 +5,7 @@ import { SessionsList } from '../components/volunteer/SessionsList';
 import { VolunteerStats } from '../components/volunteer/VolunteerStats';
 import { EditSessionModal } from '../components/volunteer/EditSessionModal';
 import { useLocationStore } from '../stores/locationStore';
-import type { VolunteerSession } from '../services/volunteerService';
+import type { VolunteerSession } from '../stores/volunteerStore';
 
 type ViewMode = 'form' | 'list' | 'stats';
 

@@ -1,4 +1,4 @@
-import { DatabaseQueries } from '../database/queries.js';
+import { DatabaseConnection } from '../database/connection.js';
 
 export interface Location {
   location_id?: number;
@@ -32,32 +32,37 @@ export interface UpdateLocationData {
 }
 
 export class LocationService {
+  private static db = DatabaseConnection.getInstance();
+
   static getActiveLocations(): Location[] {
-    return DatabaseQueries.locations.getAll.all() as Location[];
+    return this.db.prepare('SELECT * FROM locations WHERE is_active = 1 ORDER BY name').all() as Location[];
   }
-  
+
   static getById(id: number): Location | null {
-    const result = DatabaseQueries.locations.getById.get(id) as Location | undefined;
+    const result = this.db.prepare('SELECT * FROM locations WHERE location_id = ?').get(id) as Location | undefined;
     return result || null;
   }
-  
+
   static create(data: CreateLocationData): Location {
     try {
-      const result = DatabaseQueries.locations.create.run(
+      const result = this.db.prepare(`
+        INSERT INTO locations (name, city, state, address, phone)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
         data.name,
         data.city,
         data.state || 'TX',
         data.address || null,
         data.phone || null
       );
-      
+
       const locationId = result.lastInsertRowid as number;
       const newLocation = this.getById(locationId);
-      
+
       if (!newLocation) {
         throw new Error('Failed to retrieve created location');
       }
-      
+
       return newLocation;
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -68,7 +73,7 @@ export class LocationService {
       throw error;
     }
   }
-  
+
   static update(id: number, data: UpdateLocationData): Location {
     const existing = this.getById(id);
     if (!existing) {
@@ -76,9 +81,13 @@ export class LocationService {
       (error as any).statusCode = 404;
       throw error;
     }
-    
+
     try {
-      DatabaseQueries.locations.update.run(
+      this.db.prepare(`
+        UPDATE locations
+        SET name = ?, city = ?, state = ?, address = ?, phone = ?
+        WHERE location_id = ?
+      `).run(
         data.name ?? existing.name,
         data.city ?? existing.city,
         data.state ?? existing.state,
@@ -86,12 +95,12 @@ export class LocationService {
         data.phone ?? existing.phone,
         id
       );
-      
+
       const updated = this.getById(id);
       if (!updated) {
         throw new Error('Failed to retrieve updated location');
       }
-      
+
       return updated;
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -102,7 +111,7 @@ export class LocationService {
       throw error;
     }
   }
-  
+
   static toggleActive(id: number): Location {
     const existing = this.getById(id);
     if (!existing) {
@@ -110,14 +119,18 @@ export class LocationService {
       (error as any).statusCode = 404;
       throw error;
     }
-    
-    DatabaseQueries.locations.toggleActive.run(id);
-    
+
+    this.db.prepare(`
+      UPDATE locations
+      SET is_active = NOT is_active
+      WHERE location_id = ?
+    `).run(id);
+
     const updated = this.getById(id);
     if (!updated) {
       throw new Error('Failed to retrieve updated location');
     }
-    
+
     return updated;
   }
 }

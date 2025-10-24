@@ -2,38 +2,33 @@ import React from 'react';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { useLocationStore } from '../stores/locationStore';
 import { useUIStore } from '../stores/uiStore';
-import { itemService } from '../services/itemService';
-import { locationService } from '../services/locationService';
 
 export const useInventory = () => {
   const {
     items,
-    setItems,
-    setLoading,
-    setError,
+    fetchItems,
+    updateQuantity,
+    adjustQuantity,
     isLoading,
     error,
     getFilteredItems,
   } = useInventoryStore();
-  
+
   const {
     locations,
     currentLocationId,
-    setLocations,
-    setError: setLocationError,
+    fetchLocations,
   } = useLocationStore();
-  
+
   const { addToast } = useUIStore();
 
   // Load locations on mount
   React.useEffect(() => {
     const loadLocations = async () => {
       try {
-        const locationData = await locationService.getLocations();
-        setLocations(locationData);
+        await fetchLocations();
       } catch (error: any) {
         console.error('Failed to load locations:', error);
-        setLocationError(error.message);
         addToast({
           type: 'error',
           title: 'Failed to load locations',
@@ -45,59 +40,47 @@ export const useInventory = () => {
     if (locations.length === 0) {
       loadLocations();
     }
-  }, [locations.length, setLocations, setLocationError, addToast]);
+  }, [locations.length, fetchLocations, addToast]);
 
   // Load items when location changes or on mount
   React.useEffect(() => {
     const loadItems = async () => {
       if (!currentLocationId && locations.length === 0) return;
-      
-      setLoading(true);
-      setError(null);
-      
+
       try {
-        const itemData = await itemService.getItems(currentLocationId || undefined);
-        setItems(itemData);
+        await fetchItems(currentLocationId || undefined);
       } catch (error: any) {
         console.error('Failed to load items:', error);
-        setError(error.message);
         addToast({
           type: 'error',
           title: 'Failed to load inventory',
           message: error.message,
         });
-      } finally {
-        setLoading(false);
       }
     };
 
     loadItems();
-  }, [currentLocationId, locations.length, setItems, setLoading, setError, addToast]);
+  }, [currentLocationId, locations.length, fetchItems, addToast]);
 
   const refreshItems = React.useCallback(async () => {
-    setLoading(true);
     try {
-      const itemData = await itemService.getItems(currentLocationId || undefined);
-      setItems(itemData);
+      await fetchItems(currentLocationId || undefined);
       addToast({
         type: 'success',
         title: 'Inventory refreshed',
       });
     } catch (error: any) {
-      setError(error.message);
       addToast({
         type: 'error',
         title: 'Failed to refresh inventory',
         message: error.message,
       });
-    } finally {
-      setLoading(false);
     }
-  }, [currentLocationId, setItems, setLoading, setError, addToast]);
+  }, [currentLocationId, fetchItems, addToast]);
 
   const updateItemQuantity = React.useCallback(async (sizeId: number, quantity: number) => {
     try {
-      await itemService.updateQuantity(sizeId, quantity);
+      await updateQuantity(sizeId, quantity);
       // Refresh items to get updated quantities
       await refreshItems();
       addToast({
@@ -112,11 +95,11 @@ export const useInventory = () => {
       });
       throw error;
     }
-  }, [refreshItems, addToast]);
+  }, [updateQuantity, refreshItems, addToast]);
 
   const adjustItemQuantity = React.useCallback(async (sizeId: number, adjustment: number) => {
     try {
-      await itemService.adjustQuantity(sizeId, adjustment);
+      await adjustQuantity(sizeId, adjustment);
       // Refresh items to get updated quantities
       await refreshItems();
       addToast({
@@ -131,7 +114,7 @@ export const useInventory = () => {
       });
       throw error;
     }
-  }, [refreshItems, addToast]);
+  }, [adjustQuantity, refreshItems, addToast]);
 
   return {
     // Data

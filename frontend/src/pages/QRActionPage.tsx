@@ -4,7 +4,7 @@ import { Package, Plus, Minus, ArrowRightLeft, MapPin, AlertCircle } from 'lucid
 import { useLocationStore } from '../stores/locationStore';
 import { useCartStore } from '../stores/cartStore';
 import { useUIStore } from '../stores/uiStore';
-import { itemService } from '../services/itemService';
+import { useInventoryStore } from '../stores/inventoryStore';
 
 export const QRActionPage: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>();
@@ -20,7 +20,8 @@ export const QRActionPage: React.FC = () => {
   const { addToast } = useUIStore();
   const { getCurrentLocation } = useLocationStore();
   const { addItem: addToCart } = useCartStore();
-  
+  const { fetchItemById, fetchItemSizes, adjustQuantity: adjustItemQuantity } = useInventoryStore();
+
   const currentLocation = getCurrentLocation();
 
   // Load item data by ID
@@ -33,12 +34,12 @@ export const QRActionPage: React.FC = () => {
       
       try {
         // Get item by ID
-        const itemData = await itemService.getItemById(parseInt(itemId));
+        const itemData = await fetchItemById(parseInt(itemId));
         setItem(itemData);
         
         // Get sizes for current location
         if (currentLocation) {
-          const sizesData = await itemService.getItemSizes(itemData.item_id, currentLocation.location_id);
+          const sizesData = await fetchItemSizes(itemData.item_id, currentLocation.location_id);
           setItemSizes(sizesData);
           
           // Initialize quantities state
@@ -84,7 +85,7 @@ export const QRActionPage: React.FC = () => {
       if (selectedAction === 'ADD') {
         // Add to inventory (restock)
         for (const size of sizesToProcess) {
-          await itemService.adjustQuantity(size.size_id, quantities[size.size_id]);
+          await adjustItemQuantity(size.size_id, quantities[size.size_id]);
         }
         
         addToast({

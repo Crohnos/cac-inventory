@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Clock, MapPin, Calendar, TrendingUp } from 'lucide-react';
-import { volunteerService, type VolunteerStats as VolunteerStatsType } from '../../services/volunteerService';
+import { useVolunteerStore, type VolunteerStats as VolunteerStatsType } from '../../stores/volunteerStore';
 import { useLocationStore } from '../../stores/locationStore';
 
 export const VolunteerStats: React.FC = () => {
@@ -12,6 +12,7 @@ export const VolunteerStats: React.FC = () => {
   });
   
   const { currentLocationId } = useLocationStore();
+  const { getVolunteerStats } = useVolunteerStore();
 
   const loadStats = async () => {
     setIsLoading(true);
@@ -21,7 +22,7 @@ export const VolunteerStats: React.FC = () => {
       if (dateRange.date_from) filters.date_from = dateRange.date_from;
       if (dateRange.date_to) filters.date_to = dateRange.date_to;
 
-      const statsData = await volunteerService.getVolunteerStats(filters);
+      const statsData = await getVolunteerStats(filters);
       setStats(statsData);
     } catch (error: any) {
       console.error('Failed to load volunteer stats:', error);

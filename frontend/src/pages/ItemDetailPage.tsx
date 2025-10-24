@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Package, ArrowLeft, RefreshCw, Plus, Minus, AlertTriangle, ShoppingCart, ArrowRightLeft, History } from 'lucide-react';
 import { QRCodeDisplay } from '../components/shared/QRCodeDisplay';
 import { TransactionHistory } from '../components/inventory/TransactionHistory';
-import { itemService } from '../services/itemService';
+import { useInventoryStore } from '../stores/inventoryStore';
 import { useLocationStore } from '../stores/locationStore';
 import { useUIStore } from '../stores/uiStore';
 import { useCartStore } from '../stores/cartStore';
@@ -23,20 +23,21 @@ export const ItemDetailPage: React.FC = () => {
   const [editingQuantities, setEditingQuantities] = React.useState<Record<number, string>>({});
   
   const { getCurrentLocation } = useLocationStore();
+  const { fetchItemById, fetchItemSizes, adjustQuantity: adjustItemQuantity } = useInventoryStore();
   const { addToast } = useUIStore();
   const { addItem, getItemCount } = useCartStore();
   const currentLocation = getCurrentLocation();
-  
+
   const loadItemData = React.useCallback(async () => {
     if (!itemId) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const [itemData, sizesData] = await Promise.all([
-        itemService.getItemById(parseInt(itemId)),
-        itemService.getItemSizes(parseInt(itemId)) // Get sizes for ALL locations
+        fetchItemById(parseInt(itemId)),
+        fetchItemSizes(parseInt(itemId)) // Get sizes for ALL locations
       ]);
       
       setItem(itemData);
@@ -98,7 +99,7 @@ export const ItemDetailPage: React.FC = () => {
     try {
       if (selectedAction === 'ADD') {
         for (const size of currentLocationSizes) {
-          await itemService.adjustQuantity(size.size_id, quantities[size.size_id]);
+          await adjustItemQuantity(size.size_id, quantities[size.size_id]);
         }
         addToast({
           type: 'success',
@@ -191,7 +192,7 @@ export const ItemDetailPage: React.FC = () => {
     }
 
     try {
-      const updatedSize = await itemService.adjustQuantity(
+      const updatedSize = await adjustItemQuantity(
         sizeId, 
         adjustment, 
         'Admin', // TODO: Get actual admin name from user context

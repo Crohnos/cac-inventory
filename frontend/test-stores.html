@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Frontend Stores</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    .pass { background: #d4edda; }
+    .fail { background: #f8d7da; }
+    .running { background: #fff3cd; }
+  </style>
+</head>
+<body>
+  <h1>Frontend Store Tests</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    const results = document.getElementById('results');
+
+    function addTest(name, status, message) {
+      const div = document.createElement('div');
+      div.className = `test ${status}`;
+      div.innerHTML = `<strong>${name}</strong>: ${message}`;
+      results.appendChild(div);
+    }
+
+    // Test 1: Check if stores can be imported
+    addTest('Import Check', 'running', 'Testing store imports...');
+
+    try {
+      // Import the stores
+      const { useInventoryStore } = await import('./src/stores/inventoryStore.ts');
+      const { useLocationStore } = await import('./src/stores/locationStore.ts');
+      const { useCartStore } = await import('./src/stores/cartStore.ts');
+      const { useReportStore } = await import('./src/stores/reportStore.ts');
+      const { useVolunteerStore } = await import('./src/stores/volunteerStore.ts');
+
+      addTest('Import Check', 'pass', 'All stores imported successfully');
+
+      // Test 2: Check inventory store has API methods
+      const inventoryStore = useInventoryStore.getState();
+      const hasInventoryMethods =
+        typeof inventoryStore.fetchItems === 'function' &&
+        typeof inventoryStore.fetchItemById === 'function' &&
+        typeof inventoryStore.fetchItemSizes === 'function' &&
+        typeof inventoryStore.createItem === 'function';
+
+      addTest('Inventory Store API Methods',
+        hasInventoryMethods ? 'pass' : 'fail',
+        hasInventoryMethods ? 'All methods present' : 'Missing methods');
+
+      // Test 3: Check inventory store has loading/error states
+      const hasInventoryStates =
+        typeof inventoryStore.isLoading === 'boolean' &&
+        (inventoryStore.error === null || typeof inventoryStore.error === 'string');
+
+      addTest('Inventory Store States',
+        hasInventoryStates ? 'pass' : 'fail',
+        hasInventoryStates ? 'Loading and error states present' : 'Missing states');
+
+      // Test 4: Check location store
+      const locationStore = useLocationStore.getState();
+      const hasLocationMethods =
+        typeof locationStore.fetchLocations === 'function' &&
+        typeof locationStore.createLocation === 'function';
+
+      addTest('Location Store API Methods',
+        hasLocationMethods ? 'pass' : 'fail',
+        hasLocationMethods ? 'All methods present' : 'Missing methods');
+
+      // Test 5: Check cart store
+      const cartStore = useCartStore.getState();
+      const hasCartMethods = typeof cartStore.submitCheckout === 'function';
+
+      addTest('Cart Store API Methods',
+        hasCartMethods ? 'pass' : 'fail',
+        hasCartMethods ? 'submitCheckout method present' : 'Missing method');
+
+      // Test 6: Check report store
+      const reportStore = useReportStore.getState();
+      const hasReportMethods =
+        typeof reportStore.getCurrentInventory === 'function' &&
+        typeof reportStore.getLowStock === 'function' &&
+        typeof reportStore.getCheckouts === 'function';
+
+      addTest('Report Store API Methods',
+        hasReportMethods ? 'pass' : 'fail',
+        hasReportMethods ? 'All methods present' : 'Missing methods');
+
+      // Test 7: Check volunteer store
+      const volunteerStore = useVolunteerStore.getState();
+      const hasVolunteerMethods =
+        typeof volunteerStore.createSession === 'function' &&
+        typeof volunteerStore.getSessions === 'function';
+
+      addTest('Volunteer Store API Methods',
+        hasVolunteerMethods ? 'pass' : 'fail',
+        hasVolunteerMethods ? 'All methods present' : 'Missing methods');
+
+      // Test 8: Actually call fetchItems and check it works
+      addTest('Fetch Items Test', 'running', 'Calling fetchItems()...');
+
+      try {
+        await inventoryStore.fetchItems();
+        const hasItems = Array.isArray(inventoryStore.items) && inventoryStore.items.length > 0;
+
+        addTest('Fetch Items Test',
+          hasItems ? 'pass' : 'fail',
+          hasItems ? `Loaded ${inventoryStore.items.length} items` : 'No items loaded');
+      } catch (error) {
+        addTest('Fetch Items Test', 'fail', `Error: ${error.message}`);
+      }
+
+      // Test 9: Call fetchLocations
+      addTest('Fetch Locations Test', 'running', 'Calling fetchLocations()...');
+
+      try {
+        await locationStore.fetchLocations();
+        const hasLocations = Array.isArray(locationStore.locations) && locationStore.locations.length > 0;
+
+        addTest('Fetch Locations Test',
+          hasLocations ? 'pass' : 'fail',
+          hasLocations ? `Loaded ${locationStore.locations.length} locations` : 'No locations loaded');
+      } catch (error) {
+        addTest('Fetch Locations Test', 'fail', `Error: ${error.message}`);
+      }
+
+    } catch (error) {
+      addTest('Import Check', 'fail', `Error: ${error.message}`);
+    }
+  </script>
+</body>
+</html>
