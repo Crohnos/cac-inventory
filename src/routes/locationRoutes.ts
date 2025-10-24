@@ -25,15 +25,6 @@ router.get('/:id',
   validateParams(locationParamsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid location ID - must be a number'
-        }
-      });
-    }
-
     const location = LocationService.getById(id);
 
     if (!location) {
@@ -73,15 +64,6 @@ router.put('/:id',
   validateBody(updateLocationSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid location ID - must be a number'
-        }
-      });
-    }
-
     const data: UpdateLocationData = req.body;
     const location = LocationService.update(id, data);
 
@@ -98,15 +80,6 @@ router.patch('/:id/toggle',
   validateParams(locationParamsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid location ID - must be a number'
-        }
-      });
-    }
-
     const location = LocationService.toggleActive(id);
 
     res.json({

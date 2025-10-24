@@ -25,13 +25,6 @@ router.get('/',
 
     let items;
     if (locationId) {
-      if (isNaN(locationId)) {
-        return res.status(400).json({
-          error: {
-            message: 'Invalid location_id - must be a number'
-          }
-        });
-      }
       items = ItemService.getItemsByLocation(locationId);
     } else {
       items = ItemService.getAllItems();
@@ -51,15 +44,6 @@ router.get('/:id',
   validateParams(itemParamsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-
-    if (isNaN(id)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid item ID - must be a number'
-        }
-      });
-    }
-
     const item = ItemService.getById(id);
 
     if (!item) {
@@ -82,15 +66,6 @@ router.get('/qr/:qrCode',
   validateParams(qrCodeParamsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const qrCode = req.params.qrCode;
-
-    if (!qrCode || qrCode.trim().length === 0) {
-      return res.status(400).json({
-        error: {
-          message: 'QR code is required'
-        }
-      });
-    }
-
     const item = ItemService.getByQrCode(qrCode);
 
     if (!item) {
@@ -118,14 +93,6 @@ router.get('/:itemId/sizes',
     const query = (req as any).validatedQuery || req.query;
     const locationId = query.location_id ? parseInt(query.location_id as string) : null;
 
-    if (isNaN(itemId)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid item ID - must be a number'
-        }
-      });
-    }
-
     // Check if item exists
     const item = ItemService.getById(itemId);
     if (!item) {
@@ -138,13 +105,6 @@ router.get('/:itemId/sizes',
 
     let sizes;
     if (locationId) {
-      if (isNaN(locationId)) {
-        return res.status(400).json({
-          error: {
-            message: 'Invalid location_id - must be a number'
-          }
-        });
-      }
       sizes = ItemService.getItemSizesByLocation(itemId, locationId);
     } else {
       sizes = ItemService.getItemSizes(itemId);
@@ -184,22 +144,6 @@ router.put('/sizes/:sizeId/quantity',
     const sizeId = parseInt(req.params.sizeId);
     const { quantity } = req.body;
 
-    if (isNaN(sizeId)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid size ID - must be a number'
-        }
-      });
-    }
-
-    if (typeof quantity !== 'number' || quantity < 0) {
-      return res.status(400).json({
-        error: {
-          message: 'Quantity must be a non-negative number'
-        }
-      });
-    }
-
     const updatedSize = ItemService.updateQuantity(sizeId, quantity);
 
     res.json({
@@ -217,22 +161,6 @@ router.patch('/sizes/:sizeId/adjust',
   asyncHandler(async (req: Request, res: Response) => {
     const sizeId = parseInt(req.params.sizeId);
     const { adjustment, admin_name, reason } = req.body;
-
-    if (isNaN(sizeId)) {
-      return res.status(400).json({
-        error: {
-          message: 'Invalid size ID - must be a number'
-        }
-      });
-    }
-
-    if (typeof adjustment !== 'number') {
-      return res.status(400).json({
-        error: {
-          message: 'Adjustment must be a number (positive to add, negative to subtract)'
-        }
-      });
-    }
 
     const updatedSize = ItemService.adjustQuantity(
       sizeId,

@@ -875,16 +875,157 @@ function InventoryPage() {
 
 ---
 
-## [Proposed] Reduce Zod Schema Complexity
+## [Implemented] Remove Redundant Manual Validation
 
-**Status:** Proposed - Not Yet Implemented
-**Date Proposed:** 2025-10-22
-**Priority:** Medium
-**Complexity:** Low-Medium
+**Status:** ✅ Implemented
+**Date Proposed:** 2025-10-24
+**Date Implemented:** 2025-10-24
+**Priority:** Low
+**Complexity:** Low
 
 ### Overview
 
-Simplify validation by choosing a single, consistent validation strategy. Currently, validation is redundant across Zod schemas, middleware, and manual checks in controllers.
+Remove redundant manual validation checks that duplicate Zod schema validation. The code was validating the same inputs twice - once with Zod schemas and again with manual checks.
+
+### Current System (Before)
+
+**Redundant validation at two levels:**
+
+```typescript
+// Route has Zod validation
+router.get('/:id',
+  validateParams(itemParamsSchema),  // ✅ Zod validates ID is a number
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+
+    // ❌ Redundant manual check
+    if (isNaN(id)) {
+      return res.status(400).json({
+        error: { message: 'Invalid item ID - must be a number' }
+      });
+    }
+
+    const item = ItemService.getById(id);
+    // ...
+  })
+);
+```
+
+**Examples of redundancy found:**
+- `itemRoutes.ts` - 6 redundant validation blocks
+- `locationRoutes.ts` - 3 redundant validation blocks
+
+### Proposed System (After)
+
+**Trust Zod validation - remove manual checks:**
+
+```typescript
+// Route has Zod validation
+router.get('/:id',
+  validateParams(itemParamsSchema),  // ✅ Zod validates ID is a number
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    // ✅ No redundant check - Zod already validated it
+    const item = ItemService.getById(id);
+    // ...
+  })
+);
+```
+
+### Benefits
+
+1. **Less Code** - Removed ~50 lines of redundant validation checks
+2. **No Duplication** - Each validation happens once, not twice
+3. **Consistent Errors** - All validation errors come from Zod with consistent formatting
+4. **Trust the Tools** - If Zod validates successfully, the data is valid
+5. **Easier Maintenance** - Update validation rules in one place (schemas)
+
+### Implementation Summary
+
+**What Was Changed:**
+
+1. **itemRoutes.ts** - Removed 6 redundant validation blocks:
+   - GET `/` - Removed `isNaN(locationId)` check (Zod validates)
+   - GET `/:id` - Removed `isNaN(id)` check (Zod validates)
+   - GET `/qr/:qrCode` - Removed empty string check (Zod validates)
+   - GET `/:itemId/sizes` - Removed `isNaN(itemId)` and `isNaN(locationId)` checks
+   - PUT `/sizes/:sizeId/quantity` - Removed `isNaN(sizeId)` and `quantity < 0` checks
+   - PATCH `/sizes/:sizeId/adjust` - Removed `isNaN(sizeId)` and `typeof adjustment` checks
+
+2. **locationRoutes.ts** - Removed 3 redundant validation blocks:
+   - GET `/:id` - Removed `isNaN(id)` check
+   - PUT `/:id` - Removed `isNaN(id)` check
+   - PATCH `/:id/toggle` - Removed `isNaN(id)` check
+
+**Testing Completed:**
+- ✅ Invalid item ID (`/api/items/abc`) - Zod returns proper validation error
+- ✅ Negative quantity (`quantity: -5`) - Zod catches and returns validation error
+- ✅ Zero adjustment (`adjustment: 0`) - Zod catches with custom refine rule
+- ✅ Invalid location ID (`/api/locations/abc`) - Zod returns proper validation error
+- ✅ Invalid query params (`location_id=abc`) - Zod validates query parameters
+- ✅ Valid requests still work correctly
+- ✅ All error messages are clear and field-specific
+
+**Benefits Achieved:**
+- ✅ Removed ~50 lines of redundant code
+- ✅ Single source of validation truth (Zod schemas)
+- ✅ Consistent error message format across all endpoints
+- ✅ Simplified route handlers
+- ✅ Zero functional changes - all validation still works
+
+### Why This Was Better Than "Reduce Zod Schema Complexity"
+
+The original proposal suggested either:
+- **Option A:** Keep Zod, remove manual checks
+- **Option B:** Remove Zod entirely
+
+**Analysis revealed:**
+- Zod is working perfectly - no issues
+- The real problem was **redundant validation** (validating twice)
+- Removing Zod would take 2-3 hours and lose benefits (type safety, structured errors)
+- Removing redundant checks takes 15 minutes and keeps Zod's benefits
+
+**This implementation chose the pragmatic path:**
+- Keep what works (Zod)
+- Remove what's redundant (manual checks)
+- Achieve the original goal (simpler code) in less time
+
+### Implementation Estimate (Actual)
+
+- **Development:** 15 minutes
+- **Testing:** 5 minutes
+- **Total:** 20 minutes (vs 2-3 hours to remove Zod)
+
+### Related Files
+
+**Updated:**
+- `src/routes/itemRoutes.ts` - Removed 6 redundant validation blocks
+- `src/routes/locationRoutes.ts` - Removed 3 redundant validation blocks
+
+**Kept (working well):**
+- `src/schemas/itemSchemas.ts` - Zod schemas for item validation
+- `src/schemas/locationSchemas.ts` - Zod schemas for location validation
+- `src/middleware/validation.ts` - Validation middleware using Zod
+
+---
+
+## [Superseded] Reduce Zod Schema Complexity
+
+**Status:** ❌ Superseded by "Remove Redundant Manual Validation"
+**Date Proposed:** 2025-10-22
+**Date Superseded:** 2025-10-24
+**Priority:** Medium
+**Complexity:** Low-Medium
+
+### Why This Was Superseded
+
+This proposal identified a real problem - validation complexity - but proposed removing Zod entirely. After analysis, the actual issue was **redundant validation** (validating inputs twice), not Zod itself. The "Remove Redundant Manual Validation" implementation addressed the same goal (simpler code) in 20 minutes vs 2-3 hours, while keeping Zod's benefits (type safety, structured errors, consistent validation).
+
+See **"Remove Redundant Manual Validation"** section above for the implemented solution.
+
+### Overview
+
+Simplify validation by choosing a single, consistent validation strategy. The proposal identified that validation was redundant across Zod schemas, middleware, and manual checks in routes.
 
 ### Current System (Before)
 
@@ -1336,10 +1477,11 @@ app.listen(PORT, () => {
 
 ---
 
-## [Proposed] Database Schema Improvements
+## [Implemented] Database Schema Improvements
 
-**Status:** Proposed - Not Yet Implemented
+**Status:** ✅ Implemented
 **Date Proposed:** 2025-10-22
+**Date Implemented:** 2025-10-24
 **Priority:** Critical (for foreign keys), High (for date formats), Medium (for optimizations)
 **Complexity:** Low-Medium
 
@@ -1911,6 +2053,75 @@ db.close();
 - Appropriate for small intranet application
 - Balance between correctness and simplicity
 - Ready for long-term minimal maintenance
+
+---
+
+## Implementation Summary
+
+**What Was Implemented:**
+
+1. **Foreign Keys Enabled** (src/database/connection.ts:13-19):
+   - Added `pragma('foreign_keys = ON')` with verification
+   - Logs confirmation message on connection
+   - Prevents orphaned records and enforces referential integrity
+   - Tested with foreign key constraint violations
+
+2. **Date Migration to ISO Format**:
+   - Created `scripts/migrate-dates-to-iso.js` migration script
+   - Converted 9 dates from M-D-YYYY and M/D/YYYY formats to YYYY-MM-DD
+   - Migrated dates in all transaction tables: checkouts, volunteer_sessions, inventory_additions, inventory_transfers, inventory_adjustments
+   - All 71 total date records verified in ISO format
+   - Dates now sortable and compatible with SQLite date functions
+
+3. **CHECK Constraints Added**:
+   - Created `scripts/add-check-constraints.js` to recreate tables with constraints
+   - `item_sizes`: Added `current_quantity >= 0` constraint
+   - `checkout_items`: Added `quantity > 0` constraint
+   - `inventory_addition_items`: Added `quantity > 0` constraint
+   - `inventory_transfer_items`: Added `quantity > 0` constraint
+   - `inventory_adjustment_items`: Added `quantity_adjustment != 0` constraint
+   - All triggers recreated after table modifications
+   - Cleaned 4 invalid records with negative quantities before adding constraints
+
+4. **Duplicate Transaction System Removed**:
+   - Created `scripts/remove-duplicate-transaction-system.js`
+   - Dropped `inventory_transactions` table (25 records removed)
+   - Dropped 9 duplicate indexes on that table
+   - Specialized transaction tables remain as single source of truth
+   - `reportService.getTransactionHistory()` provides unified view without duplication
+
+5. **Duplicate Indexes Removed**:
+   - All duplicate indexes were on the `inventory_transactions` table
+   - Removed with the table in step 4 above
+   - No other duplicate indexes found in database
+
+**Testing Completed:**
+- ✅ Foreign key tests pass (prevent invalid inserts, enforce CASCADE/RESTRICT)
+- ✅ CHECK constraint tests pass (prevent negative inventory, zero quantities)
+- ✅ Date format verification complete (all dates ISO format)
+- ✅ All API endpoints tested and working (locations, items, reports, volunteers)
+- ✅ Database triggers still functioning correctly
+- ✅ No performance regression observed
+
+**Scripts Created:**
+- `scripts/test-foreign-keys.js` - Tests foreign key enforcement
+- `scripts/migrate-dates-to-iso.js` - Migrates all dates to ISO format
+- `scripts/add-check-constraints.js` - Adds CHECK constraints by recreating tables
+- `scripts/test-check-constraints.js` - Tests CHECK constraint enforcement
+- `scripts/remove-duplicate-transaction-system.js` - Removes redundant table and indexes
+
+**Benefits Achieved:**
+- ✅ Data integrity guaranteed by foreign keys and CHECK constraints
+- ✅ Date sorting and SQLite date functions now work correctly
+- ✅ Negative inventory impossible at database level
+- ✅ Zero-quantity transactions prevented
+- ✅ Cleaner schema with no duplication
+- ✅ All database operations tested and working
+
+### Implementation Estimate (Actual)
+- **Development:** ~3 hours
+- **Testing:** 1 hour
+- **Total:** ~4 hours
 
 ---
 
